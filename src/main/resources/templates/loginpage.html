@@ -1,6 +1,6 @@
 <html layout:decorate="~{loginpage_layout}">
     <div layout:fragment="content" class="login-box">
-        <form th:action="@{/user/login}" method="post" onsubmit="return validateLogin()">
+        <form th:action="@{/user/login}" method="post" onsubmit="return login(event)">
             <div class="logo">My SNS</div>
             <div class="login-mark">로그인</div>
 
@@ -20,29 +20,62 @@
         </form>
 
         <script>
-            function validateLogin() {
+            async function login(event) {
+                event.preventDefault();
+
                 const email = document.getElementById("username");
                 const pass = document.getElementById("password");
-                
                 const errorBox = document.getElementById("error-box");
                 const errorMsg = document.getElementById("error-msg");
 
                 if (email.value.trim() === "") {
-                    errorMsg.innerText = "이메일을 입력해 주세요."; 
-                    errorBox.style.display = "block";
+                    showError("이메일을 입력해 주세요.");
                     email.focus();
-                    return false;
+                    return;
                 }
-
                 if (pass.value.trim() === "") {
-                    errorMsg.innerText = "비밀번호를 입력해 주세요.";
-                    errorBox.style.display = "block";
+                    showError("비밀번호를 입력해 주세요.");
                     pass.focus();
-                    return false;
+                    return;
                 }
 
-                errorBox.style.display = "none";
-                return true;
+                const formData = new FormData();
+                formData.append("username", email.value);
+                formData.append("password", pass.value);
+
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+                
+                try {
+                    const response = await fetch("/api/login", {
+                        method: "POST",
+                        headers: { [csrfHeader]: csrfToken }, 
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === "success") {
+                            location.href = "/";
+                        } else {
+                            showError(data.message);
+                        }
+                    } else {
+                        showError("서버 오류가 발생했습니다.");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showError("시스템 오류입니다.");
+                }
+            }
+
+            function showError(msg) {
+                const errorBox = document.getElementById("error-box");
+                const errorMsg = document.getElementById("error-msg");
+                errorMsg.innerText = msg;
+                errorBox.style.display = "block";
             }
         </script>
     </div>

@@ -100,7 +100,6 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.status === "success") {
                             const postBox = form.closest('.post-right');
                             const answerContainer = postBox.querySelector('.post-answer-footer');
 
@@ -116,7 +115,6 @@
                             answerContainer.insertAdjacentHTML('beforeend', newAnswerHtml);
                             textarea.value = ""; 
                             answerContainer.scrollTop = answerContainer.scrollHeight; 
-                        }
                     } else {
                         console.log("Error status:", response.status);
                         alert("등록 실패: 로그인이 되어있는지 확인해주세요.");
@@ -217,45 +215,44 @@
 
                     if (response.ok) {
                         const data = await response.json();
-            
-                        if (data.status === "success") {
 
-                            contentInput.value = "";
-                            fileInput.value = "";
-                            document.getElementById('fileNameDisplay').textContent = "";
+                        contentInput.value = "";
+                        fileInput.value = "";
+                        document.getElementById('fileNameDisplay').textContent = "";
 
-                            const newPostHtml = `
-                            <div class="post-box">
-                                <div class="post-left"> <div class="post-header" style="margin-bottom: 10px;">
-                                        <div style="font-weight: bold; color: #050505;">${data.username}</div>
-                                        <div>${data.createDate}</div>
-                                    </div>   
-                                    <div class="post-content">
-                                        <div style="white-space: pre-wrap;">${data.content}</div>
-                                        
-                                        ${data.imgUrl ? `<div style="margin-top: 20px;"><img src="${data.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
-                                    </div>
-                                </div>
-
-                                <div class="post-right">
-                                    <div class="post-answer-footer"></div>
-                                    <div class="horizontal-line"></div>
-                                    <form onsubmit="return submitAnswer(this, event, ${data.postId})">
-                                        <div class="post-footer">
-                                            <textarea name="content" class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
-                                            <button type="submit" class="btn-blue">게시</button>
-                                        </div>
-                                    </form>
+                        const newPostHtml = `
+                        <div class="post-box">
+                            <div class="post-left"> <div class="post-header" style="margin-bottom: 10px;">
+                                    <div style="font-weight: bold; color: #050505;">${data.author ? data.author.username : '알 수 없음'}</div>
+                                    <div>${data.createDate}</div>
+                                </div>   
+                                <div class="post-content">
+                                    <div style="white-space: pre-wrap;">${data.content}</div>
+                                    
+                                    ${data.imgUrl ? `<div style="margin-top: 20px;"><img src="${data.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
                                 </div>
                             </div>
-                            `;
 
-                            const writeBox = document.querySelector('.write-box');
-                            writeBox.insertAdjacentHTML('afterend', newPostHtml);
+                            <div class="post-right">
+                                <div class="post-answer-footer"></div>
+                                <div class="horizontal-line"></div>
+                                <form onsubmit="return submitAnswer(this, event, ${data.id})">
+                                    <div class="post-footer">
+                                        <textarea name="content" class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
+                                        <button type="submit" class="btn-blue">게시</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        `;
 
-                        } else {
-                            alert("등록 실패: " + data.message);
-                        }
+                        const writeBox = document.querySelector('.write-box');
+                        writeBox.insertAdjacentHTML('afterend', newPostHtml);
+
+                    } else {
+                        const errorMessage = await response.text();
+                        console.log("Error status:", response.status);
+                        alert("등록 실패: " + data.message);
                     }
                 } catch (error) {
                     console.error(error);

@@ -81,5 +81,20 @@ public class UserController {
         
         return response;
     }
+
+    @PostMapping("/api/logout")
+    @ResponseBody
+    public Map<String, Object> logoutApi(HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            request.logout();
+            response.put("status", "success");
+            response.put("message", "로그아웃 성공");
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "로그아웃 실패");
+        }
+        return response;
+    }
     
 }

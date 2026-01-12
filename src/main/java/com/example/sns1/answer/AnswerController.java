@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.Principal;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +27,7 @@ public class AnswerController {
     private final PostService postService;
     private final AnswerService answerService;
     private final UserService userService;
+    private final SimpMessagingTemplate messagingTemplate;
 
         @PreAuthorize("isAuthenticated()")
         @PostMapping("/api/answer/create/{id}")
@@ -52,7 +54,10 @@ public class AnswerController {
                             .content(answer.getContent())
                             .username(answer.getAuthor().getUsername())
                             .createDate(answer.getCreateDate().format(formatter))
+                            .postId(post.getId())
                             .build();
+
+                    messagingTemplate.convertAndSend("/sub/answers", answerDto);
 
                     return ResponseEntity.ok(answerDto);
 

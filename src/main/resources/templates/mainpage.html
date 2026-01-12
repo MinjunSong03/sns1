@@ -15,7 +15,7 @@
             </form>
         </div>
 
-        <div class="post-box" th:each="post : ${postList}">
+        <div class="post-box" th:each="post : ${postList}" th:id="'post-box-' + ${post.id}">
 
             <div class="post-left">
                 <div class="post-header">
@@ -214,44 +214,11 @@
                     });
 
                     if (response.ok) {
-                        const data = await response.json();
-
                         contentInput.value = "";
                         fileInput.value = "";
                         document.getElementById('fileNameDisplay').textContent = "";
-
-                        const newPostHtml = `
-                        <div class="post-box">
-                            <div class="post-left"> <div class="post-header" style="margin-bottom: 10px;">
-                                    <div style="font-weight: bold; color: #050505;">${data.author ? data.author.username : '알 수 없음'}</div>
-                                    <div>${data.createDate}</div>
-                                </div>   
-                                <div class="post-content">
-                                    <div style="white-space: pre-wrap;">${data.content}</div>
-                                    
-                                    ${data.imgUrl ? `<div style="margin-top: 20px;"><img src="${data.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
-                                </div>
-                            </div>
-
-                            <div class="post-right">
-                                <div class="post-answer-footer"></div>
-                                <div class="horizontal-line"></div>
-                                <form onsubmit="return submitAnswer(this, event, ${data.id})">
-                                    <div class="post-footer">
-                                        <textarea name="content" class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
-                                        <button type="submit" class="btn-blue">게시</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        `;
-
-                        const writeBox = document.querySelector('.write-box');
-                        writeBox.insertAdjacentHTML('afterend', newPostHtml);
-
                     } else {
-                        const errorMessage = await response.text();
-                        console.log("Error status:", response.status);
+                        const data = await response.json();
                         alert("등록 실패: " + data.message);
                     }
                 } catch (error) {
@@ -259,6 +226,84 @@
                     alert("에러 발생");
                 }
                 return false;
+            }
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+        <script>
+            var socket = new SockJS('/ws-stomp-web');
+            var stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function (frame) {
+                console.log('실시간 연결 성공: ' + frame);
+
+                stompClient.subscribe('/sub/posts', function (message) {
+                    var newPost = JSON.parse(message.body);
+                    addPostToFeedRealtime(newPost); 
+                });
+                stompClient.subscribe('/sub/answers', function (message) {
+                    var newAnswer = JSON.parse(message.body);
+                    addAnswerToPostRealtime(newAnswer);
+                });
+            });
+
+            function addPostToFeedRealtime(post) {
+                var newPostHtml = `
+                    <div class="post-box" id="post-box-${post.id}">
+                        <div class="post-left">
+                            <div class="post-header" style="margin-bottom: 10px;">
+                                <div style="font-weight: bold; color: #050505;">${post.username || (post.author ? post.author.username : '알 수 없음')}</div>
+                                <div>${post.createDate}</div>
+                            </div>
+                            <div class="post-content">
+                                <div style="white-space: pre-wrap;">${post.content}</div>
+                                ${post.imgUrl ? `<div style="margin-top: 20px;"><img src="${post.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
+                            </div>
+                        </div>
+                        <div class="post-right">
+                            <div class="post-answer-footer"></div>
+                            <div class="horizontal-line"></div>
+                            <form onsubmit="return submitAnswer(this, event, ${post.id})">
+                                <div class="post-footer">
+                                    <textarea class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
+                                    <button type="submit" class="btn-blue">게시</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                var writeBox = document.querySelector('.write-box');
+                writeBox.insertAdjacentHTML('afterend', newPostHtml);
+            }
+
+            function addAnswerToPostRealtime(answer) {
+                var postBox = document.getElementById('post-box-' + answer.postId);
+                
+                if (postBox) {
+                    var answerContainer = postBox.querySelector('.post-answer-footer');
+                    var lastComment = answerContainer.lastElementChild;
+                    if (lastComment) {
+                        var lastContent = lastComment.querySelector('div[style="white-space: pre-wrap;"]').innerText;
+                        var lastAuthor = lastComment.querySelector('.post-header > div:first-child').innerText;
+                        if (lastContent.trim() === answer.content.trim() && lastAuthor === answer.username) {
+                            return; 
+                        }
+                    }
+
+                    var newAnswerHtml = `
+                        <div class="post-answer-footer-content-box">
+                            <div class="post-header">
+                                <div style="font-weight: bold; color: #050505;">${answer.username}</div> 
+                                <div>${answer.createDate}</div>
+                            </div>
+                            <div style="white-space: pre-wrap;">${answer.content}</div>
+                        </div>
+                    `;
+                    answerContainer.insertAdjacentHTML('beforeend', newAnswerHtml);
+                    answerContainer.scrollTop = answerContainer.scrollHeight;
+                }
             }
         </script>
     </div>

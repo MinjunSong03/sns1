@@ -34,6 +34,7 @@ public class PostResponseDto {
         private String content;
         private String username;
         private String createDate;
+        private Long postId;
     }
 
     public static PostResponseDto from(Post post) {
@@ -58,6 +59,7 @@ public class PostResponseDto {
                             .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "알 수 없음")
                             .createDate(answer.getCreateDate() != null ? 
                                     answer.getCreateDate().format(formatter) : "")
+                            .postId(post.getId())
                             .build())
                         .collect(Collectors.toList()) 
                         : new ArrayList<>())

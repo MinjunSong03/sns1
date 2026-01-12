@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 
 import java.security.Principal;
@@ -27,6 +28,7 @@ public class PostController {
 
     private final PostService postService;
     private final UserService userService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/")
@@ -50,10 +52,13 @@ public class PostController {
 
         try {
             UserData userData = this.userService.getUser(principal.getName());
-            
             Post savedPost = this.postService.create(content, userData, file);
+
+            PostResponseDto responseDto = PostResponseDto.from(savedPost);
+
+            messagingTemplate.convertAndSend("/sub/posts", responseDto);
             
-            return ResponseEntity.ok(PostResponseDto.from(savedPost));
+           return ResponseEntity.ok(responseDto);
 
         } catch (Exception e) {
             e.printStackTrace();

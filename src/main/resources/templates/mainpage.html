@@ -2,7 +2,7 @@
     <div layout:fragment="content" class="container">
         <div class="write-box">
             <form onsubmit="return submitPost(event)">
-                <textarea id="write-input-box" class="write-input-box" placeholder="무슨 생각을 하고 계신가요?"></textarea>
+                <textarea id="write-input" class="write-input" placeholder="무슨 생각을 하고 계신가요?"></textarea>
                 <input type="file" id="file" name="file" style="display: none;" onchange="updateFileName()">
                 <div id="fileNameDisplay" style="font-size: 12px; color: #1877f2; margin-bottom: 5px;"></div>
 
@@ -15,30 +15,31 @@
             </form>
         </div>
 
-        <div class="post-box" th:each="post : ${postList}" th:id="'post-box-' + ${post.id}">
+        <div class="post-answer-box" th:each="post : ${postList}" th:id="'postbox-' + ${post.id}">
             <div class="post-left">
-                <div class="post-header">
+                <div class="post-time">
                     <div th:if="${post.author != null}" 
                         th:text="${post.author.username}" 
                         style="font-weight: bold; color: #050505;">
                     </div>
-
                     <div th:text="${#temporals.format(post.createDate, 'yyyy-MM-dd HH:mm')}">
                     </div>
                 </div> 
-                <div class="post-content">
-                    <div th:text="${post.content}" style="white-space: pre-wrap;"></div>
-                    
-                    <div th:if="${post.imgUrl != null}" style="margin-top: 20px;">
-                        <img th:src="${post.imgUrl}" style="max-width: 100%; border-radius: 20px;">
+                <div class="post-box">
+                    <div class="post-content-box">
+                        <div th:text="${post.content}"></div>
+                        
+                        <div th:if="${post.imgUrl != null}" style="margin-top: 20px;">
+                            <img th:src="${post.imgUrl}" style="max-width: 100%; border-radius: 20px;">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="post-right">
-                <div class="post-answer-footer">
-                    <div class="post-answer-footer-content-box" th:each="answer : ${post.answerList}" th:id="'answer-' + ${answer.id}">
-                        <div class="post-header">
+                <div class="answer-box">
+                    <div class="answer-content-box" th:each="answer : ${post.answerList}" th:id="'answer-' + ${answer.id}">
+                        <div class="post-time">
                             <div th:if="${answer.author != null}" th:text="${answer.author.username}" style="font-weight: bold; color: #050505;"></div> 
                             <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
                         </div>
@@ -48,8 +49,8 @@
 
                 <div class="horizontal-line" th:if="${!post.answerList.isEmpty()}"></div>
                 <form th:onsubmit="'return submitAnswer(this, event, ' + ${post.id} + ')'">
-                    <div class="post-footer">
-                        <textarea class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
+                    <div class="answer-footer">
+                        <textarea class="answer-input-box answer-input" placeholder="댓글을 작성해 주세요."></textarea>
                         <button type="submit" class="btn-blue">게시</button>
                     </div>
                 </form>
@@ -60,7 +61,7 @@
         </div>
         <script> // 게시물 댓글 스크롤을 최하단으로 이동.
             document.addEventListener("DOMContentLoaded", function() {
-                const answerBoxes = document.querySelectorAll('.post-answer-footer');
+                const answerBoxes = document.querySelectorAll('.answer-box');
                 answerBoxes.forEach(function(box) {
                     box.scrollTop = box.scrollHeight;
                 });
@@ -100,7 +101,7 @@
                     if (response.ok) {
                         const data = await response.json();
                             const postBox = form.closest('.post-right');
-                            const answerContainer = postBox.querySelector('.post-answer-footer');
+                            const answerContainer = postBox.querySelector('.answer-box');
                             textarea.value = ""; 
                             answerContainer.scrollTop = answerContainer.scrollHeight; 
                     } else {
@@ -116,12 +117,12 @@
         </script>
         <script> // 댓글 입력 중 댓글 입력창 높이에 의한 댓글창 가림 해결.
             document.addEventListener("input", function(e) {
-                if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input-box")) {
+                if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input")) {
                     
                     const textarea = e.target;
                     const form = textarea.closest('form');
                     const postBox = form.closest('.post-right');
-                    const answerContainer = postBox.querySelector('.post-answer-footer');
+                    const answerContainer = postBox.querySelector('.answer-box');
 
                     if (!textarea.dataset.prevHeight) {
                         textarea.dataset.prevHeight = textarea.clientHeight;
@@ -146,7 +147,7 @@
                     });
 
                     document.addEventListener("focusin", function(e) {
-                        if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input-box")) {
+                        if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input")) {
                             e.target.dataset.prevHeight = e.target.clientHeight;
                         }
                     });
@@ -169,7 +170,7 @@
                 event.preventDefault(); 
 
 
-                const contentInput = document.getElementById('write-input-box');
+                const contentInput = document.getElementById('write-input');
                 const fileInput = document.getElementById('file');
                 
 
@@ -228,33 +229,35 @@
 
                 stompClient.subscribe('/sub/posts', function (message) {
                     var newPost = JSON.parse(message.body);
-                    addPostToFeedRealtime(newPost); 
+                    addPost(newPost); 
                 });
                 stompClient.subscribe('/sub/answers', function (message) {
                     var newAnswer = JSON.parse(message.body);
-                    addAnswerToPostRealtime(newAnswer);
+                    addAnswer(newAnswer);
                 });
             });
 
-            function addPostToFeedRealtime(post) {
+            function addPost(post) {
                 var newPostHtml = `
-                    <div class="post-box" id="post-box-${post.id}">
+                    <div class="post-answer-box" id="postbox-${post.id}">
                         <div class="post-left">
-                            <div class="post-header" style="margin-bottom: 10px;">
+                            <div class="post-time" style="margin-bottom: 10px;">
                                 <div style="font-weight: bold; color: #050505;">${post.author ? post.author.username : '알 수 없음'}</div>
                                 <div>${post.createDate}</div>
                             </div>
-                            <div class="post-content">
-                                <div style="white-space: pre-wrap;">${post.content}</div>
-                                ${post.imgUrl ? `<div style="margin-top: 20px;"><img src="${post.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
+                            <div class="post-box">
+                                <div class="post-content-box">
+                                    <div style="white-space: pre-wrap;">${post.content}</div>
+                                    ${post.imgUrl ? `<div style="margin-top: 20px;"><img src="${post.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
+                                </div>
                             </div>
                         </div>
                         <div class="post-right">
-                            <div class="post-answer-footer"></div>
+                            <div class="answer-box"></div>
                             <div class="horizontal-line"></div>
                             <form onsubmit="return submitAnswer(this, event, ${post.id})">
-                                <div class="post-footer">
-                                    <textarea class="answer-input-box answer-box" placeholder="댓글을 작성해 주세요."></textarea>
+                                <div class="answer-footer">
+                                    <textarea class="answer-input answer-input-box" placeholder="댓글을 작성해 주세요."></textarea>
                                     <button type="submit" class="btn-blue">게시</button>
                                 </div>
                             </form>
@@ -266,17 +269,17 @@
                 writeBox.insertAdjacentHTML('afterend', newPostHtml);
             }
 
-            function addAnswerToPostRealtime(answer) {
-                var postBox = document.getElementById('post-box-' + answer.postId);
+            function addAnswer(answer) {
+                var postBox = document.getElementById('postbox-' + answer.postId);
                 
                 if (postBox) {
                     if (document.getElementById('answer-' + answer.id)) {
                     return; 
                 }
-                    var answerContainer = postBox.querySelector('.post-answer-footer'); 
+                    var answerContainer = postBox.querySelector('.answer-box'); 
                     var newAnswerHtml = `
-                        <div class="post-answer-footer-content-box" id="answer-${answer.id}">
-                            <div class="post-header">
+                        <div class="answer-content-box" id="answer-${answer.id}">
+                            <div class="post-time">
                                 <div style="font-weight: bold; color: #050505;">${answer.author ? answer.author.username : answer.username}</div> 
                                 <div>${answer.createDate}</div>
                             </div>

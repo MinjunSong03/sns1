@@ -55,8 +55,9 @@
                         body: formData
                     });
 
-                    if (response.ok) {
+                    if (response.ok || response.status === 401) {
                         const data = await response.json();
+                        
                         if (data.status === "success") {
                             location.href = "/";
                         } else {
@@ -74,8 +75,8 @@
             function showError(msg) {
                 const errorBox = document.getElementById("error-box");
                 const errorMsg = document.getElementById("error-msg");
-                errorMsg.innerText = msg;
                 errorBox.style.display = "block";
+                errorMsg.innerText = msg;
             }
         </script>
     </div>

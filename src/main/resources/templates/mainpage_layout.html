@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1200, user-scalable=yes">
+    <meta name="viewport" content="width=1000, user-scalable=yes">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>My SNS</title>
@@ -14,7 +14,7 @@
             margin: 0; 
             padding: 0;
             padding-top: 60px; 
-            min-width: 1200px;
+            width: 100%;
         }
         textarea { 
             box-sizing: border-box;
@@ -27,8 +27,8 @@
         }
         .container { 
             box-sizing: border-box;
-            max-width: 1200px; 
             margin: 20px auto;  
+            width: 90%;
         }
         .navbar {
             box-sizing: border-box;
@@ -79,8 +79,42 @@
             align-items: center; 
             font-size: 15px;    
             margin-right: 15px;
-}
-        .post-box { 
+        }
+        .write-box { 
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.3); 
+            padding: 15px; 
+            border-radius: 20px; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; 
+            display: block; 
+            position: sticky;
+            top: 80px;
+            z-index: 900;
+            
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .write-input {
+            box-sizing: border-box;
+            background: transparent;  
+            border: none; 
+            cursor: pointer; 
+            font-size: 15px;
+            field-sizing: content; 
+            min-height: 80px;
+            line-height: 1.5;
+        }
+        .write-footer {
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+        }
+        .post-answer-box { 
             box-sizing: border-box;
             background: rgba(255, 255, 255, 0.3); 
             padding: 15px; 
@@ -111,46 +145,11 @@
             display: flex;
             flex-direction: column;
             min-height: 0;
-
             overflow: hidden; 
             border-top-right-radius: 20px;
             border-bottom-right-radius: 20px;
         }
-        .write-box { 
-            box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.3); 
-            padding: 15px; 
-            border-radius: 20px; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
-            margin-bottom: 20px; 
-            display: block; 
-            position: sticky;
-            top: 80px;
-            z-index: 900;
-            
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-        .write-footer {
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-        }
-        .write-input-box {
-            box-sizing: border-box;
-            background: transparent;  
-            border: none; 
-            cursor: pointer; 
-            font-size: 15px;
-            field-sizing: content; 
-            min-height: 80px;
-            line-height: 1.5;
-        }
-        .post-header { 
+        .post-time { 
             box-sizing: border-box;
             margin-bottom: 10px; 
             font-size: 13px; 
@@ -159,17 +158,49 @@
             justify-content: space-between;
             align-items: center;
         }
-        .post-content {
+        .post-box {
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1; 
+            min-height: 0;
+            overflow-y: auto;
+        }
+        .post-content-box {
             box-sizing: border-box;
             font-size: 15px; 
             line-height: 1.5;  
             margin-top: 10px;
+            padding-right: 10px;
+            flex: 1;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+        .answer-box {
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
             overflow-y: auto;
             padding-right: 15px;
-
-            flex: 1;
+            flex: 1; 
+            min-height: 0;
         }
-        .post-footer {
+        .answer-box > :first-child {
+            margin-top: auto;
+        }
+        .answer-content-box {
+            box-sizing: border-box;
+            background-color: #e4e6eb; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            font-size: 15px; 
+            overflow-wrap: break-word;
+        }
+        .answer-footer {
             box-sizing: border-box;
             display: flex;
             justify-content: space-between;
@@ -177,6 +208,22 @@
             gap: 20px;
             align-items: flex-end;
             margin-top: auto;
+        }
+        .answer-input-box {
+            box-sizing: border-box;
+            background-color: #e4e6eb; 
+            border: none; 
+            padding: 7px 20px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-size: 15px; 
+        }
+        .answer-input {
+            box-sizing: border-box;
+            field-sizing: content; 
+            line-height: 1.5;
+            max-height: 100px;
+            overflow-y: auto;
         }
         .btn-gray {
             box-sizing: border-box;
@@ -202,78 +249,40 @@
             font-size: 15px; 
             white-space: nowrap;
         }
-        .answer-input-box {
-            box-sizing: border-box;
-            field-sizing: content; 
-            line-height: 1.5;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-        .answer-box {
-            box-sizing: border-box;
-            background-color: #e4e6eb; 
-            border: none; 
-            padding: 7px 20px; 
-            border-radius: 20px; 
-            cursor: pointer; 
-            font-size: 15px; 
-        }
-        .post-answer-footer {
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-bottom: 20px;
-            overflow-y: auto;
-            padding-right: 15px;
-            flex: 1; 
-            min-height: 0;
-        }
-        .post-answer-footer > :first-child {
-            margin-top: auto;
-        }
-        .post-answer-footer-content-box {
-            box-sizing: border-box;
-            background-color: #e4e6eb; 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 20px; 
-            font-size: 15px; 
-        }
         .horizontal-line {
             border-top: 1px solid #dee0e2;
         }
 
-        .post-answer-footer::-webkit-scrollbar {
+        .answer-box::-webkit-scrollbar {
             width: 8px;
         }
-        .post-answer-footer::-webkit-scrollbar-thumb {
+        .answer-box::-webkit-scrollbar-thumb {
             background-color: #1877f2;
             border-radius: 4px;
         }
-        .post-answer-footer::-webkit-scrollbar-track {
+        .answer-box::-webkit-scrollbar-track {
             background-color: transparent;
         }
 
-        .post-content::-webkit-scrollbar {
+        .post-box::-webkit-scrollbar {
             width: 8px;
         }
-        .post-content::-webkit-scrollbar-thumb {
+        .post-box::-webkit-scrollbar-thumb {
             background-color: #1877f2;
             border-radius: 4px;
         }
-        .post-content::-webkit-scrollbar-track {
+        .post-box::-webkit-scrollbar-track {
             background-color: transparent;
         }
 
-        .answer-input-box::-webkit-scrollbar {
+        .answer-input::-webkit-scrollbar {
             width: 8px;
         }
-        .answer-input-box::-webkit-scrollbar-thumb {
+        .answer-input::-webkit-scrollbar-thumb {
             background-color: #1877f2;
             border-radius: 4px;
         }
-        .answer-input-box::-webkit-scrollbar-track {
+        .answer-input::-webkit-scrollbar-track {
             background-color: transparent;
         }
 

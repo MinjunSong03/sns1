@@ -5,7 +5,6 @@
                 <textarea id="write-input" class="write-input" placeholder="무슨 생각을 하고 계신가요?"></textarea>
                 <input type="file" id="file" name="file" style="display: none;" onchange="updateFileName()">
                 <div id="fileNameDisplay" style="font-size: 12px; color: #1877f2; margin-bottom: 5px;"></div>
-
                 <div class="horizontal-line"></div>
                 
                 <div class="write-footer">
@@ -17,7 +16,7 @@
 
         <div class="post-answer-box" th:each="post : ${postList}" th:id="'postbox-' + ${post.id}">
             <div class="post-left">
-                <div class="post-time">
+                <div class="post-header">
                     <div th:if="${post.author != null}" 
                         th:text="${post.author.username}" 
                         style="font-weight: bold; color: #050505;">
@@ -26,12 +25,9 @@
                     </div>
                 </div> 
                 <div class="post-box">
-                    <div class="post-content-box">
-                        <div th:text="${post.content}"></div>
-                        
-                        <div th:if="${post.imgUrl != null}" style="margin-top: 20px;">
-                            <img th:src="${post.imgUrl}" style="max-width: 100%; border-radius: 20px;">
-                        </div>
+                    <div th:text="${post.content}" style="white-space: pre-wrap;"></div>
+                    <div th:if="${post.imgUrl != null}" style="margin-top: 20px;">
+                        <img th:src="${post.imgUrl}" style="max-width: 100%; border-radius: 20px;">
                     </div>
                 </div>
             </div>
@@ -39,7 +35,7 @@
             <div class="post-right">
                 <div class="answer-box">
                     <div class="answer-content-box" th:each="answer : ${post.answerList}" th:id="'answer-' + ${answer.id}">
-                        <div class="post-time">
+                        <div class="post-header">
                             <div th:if="${answer.author != null}" th:text="${answer.author.username}" style="font-weight: bold; color: #050505;"></div> 
                             <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
                         </div>
@@ -241,15 +237,13 @@
                 var newPostHtml = `
                     <div class="post-answer-box" id="postbox-${post.id}">
                         <div class="post-left">
-                            <div class="post-time" style="margin-bottom: 10px;">
+                            <div class="post-header" style="margin-bottom: 10px;">
                                 <div style="font-weight: bold; color: #050505;">${post.author ? post.author.username : '알 수 없음'}</div>
                                 <div>${post.createDate}</div>
                             </div>
                             <div class="post-box">
-                                <div class="post-content-box">
-                                    <div style="white-space: pre-wrap;">${post.content}</div>
-                                    ${post.imgUrl ? `<div style="margin-top: 20px;"><img src="${post.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
-                                </div>
+                                <div style="white-space: pre-wrap;">${post.content}</div>
+                                ${post.imgUrl ? `<div style="margin-top: 20px;"><img src="${post.imgUrl}" style="max-width: 100%; border-radius: 10px;"></div>` : ''}
                             </div>
                         </div>
                         <div class="post-right">
@@ -279,7 +273,7 @@
                     var answerContainer = postBox.querySelector('.answer-box'); 
                     var newAnswerHtml = `
                         <div class="answer-content-box" id="answer-${answer.id}">
-                            <div class="post-time">
+                            <div class="post-header">
                                 <div style="font-weight: bold; color: #050505;">${answer.author ? answer.author.username : answer.username}</div> 
                                 <div>${answer.createDate}</div>
                             </div>

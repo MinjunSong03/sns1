@@ -1,6 +1,5 @@
 package com.example.sns1.user;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -44,6 +43,7 @@ public class UserController {
             response.put("status", "success");
             response.put("message", "로그인 되었습니다.");
             response.put("token", jwt);
+            response.put("username", authentication.getName());
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "아이디 또는 비밀번호가 일치하지 않습니다.");
@@ -88,5 +88,32 @@ public class UserController {
             return "signuppage";
         }
         return "redirect:/user/login";
+    }
+
+    @PostMapping("/api/signup")
+    @ResponseBody
+    public Map<String, Object> signupApi(@RequestParam("email") String email, 
+                                         @RequestParam("password1") String password1,
+                                         @RequestParam("password2") String password2,
+                                         @RequestParam("username") String username) { 
+        Map<String, Object> response = new HashMap<>();
+
+        if (!password1.equals(password2)) {
+            response.put("status", "error");
+            response.put("message", "비밀번호가 일치하지 않습니다.");
+            return response;
+        }
+        try {
+            userService.create(username, email, password1);
+            response.put("status", "success");
+            response.put("message", "회원가입이 완료되었습니다.");
+        } catch (DataIntegrityViolationException e) {
+            response.put("status", "error");
+            response.put("message", "이미 등록된 사용자입니다.");
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "회원가입에 실패했습니다.");
+        }
+        return response;
     }
 }

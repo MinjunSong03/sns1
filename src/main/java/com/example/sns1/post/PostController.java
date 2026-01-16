@@ -4,6 +4,7 @@ import com.example.sns1.user.UserData;
 import com.example.sns1.user.UserService;
 
 import java.util.stream.Collectors;
+import java.util.HashMap;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Controller
@@ -64,8 +66,13 @@ public class PostController {
     }
 
     private ResponseEntity<?> processCreatePost(String content, MultipartFile file, Principal principal) {
-        if (content == null || content.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("내용을 입력해 주세요.");
+        boolean isContentEmpty = (content == null || content.trim().isEmpty());
+        boolean isFileEmpty = (file == null || file.isEmpty());
+
+        if (isContentEmpty && isFileEmpty) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "내용을 입력해 주세요.");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
         try {
             UserData userData = this.userService.getUser(principal.getName());

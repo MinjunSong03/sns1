@@ -52,7 +52,7 @@
                 </form>
             </div>
             <div th:if="${postList.isEmpty()}" style="text-align: center; color: #888; padding: 20px;">
-                    <p>등록된 게시물이 없습니다.</p>
+                <p>등록된 게시물이 없습니다.</p>
             </div>
         </div>
         <script> // 게시물 댓글 스크롤을 최하단으로 이동.
@@ -174,7 +174,7 @@
                 const file = fileInput.files[0];
 
                 if (content.trim() === "" && !file) {
-                    alert("내용이나 사진을 입력해주세요.");
+                    alert("내용을 입력해 주세요.");
                     return false;
                 }
 
@@ -204,7 +204,7 @@
                         document.getElementById('fileNameDisplay').textContent = "";
                     } else {
                         const data = await response.json();
-                        alert("등록 실패: " + data.message);
+                        alert(data.message);
                     }
                 } catch (error) {
                     console.error(error);

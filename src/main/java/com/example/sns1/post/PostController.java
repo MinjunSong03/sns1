@@ -1,8 +1,5 @@
 package com.example.sns1.post;
 
-import com.example.sns1.user.UserData;
-import com.example.sns1.user.UserService;
-
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +12,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.example.sns1.user.UserData;
+import com.example.sns1.user.UserService;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;

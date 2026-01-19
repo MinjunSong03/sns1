@@ -1,9 +1,10 @@
 package com.example.sns1.answer;
 
+import java.time.LocalDateTime;
+
 import com.example.sns1.post.Post;
 import com.example.sns1.user.UserData;
 
-import java.time.LocalDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

@@ -5,7 +5,11 @@
         <div class="nav-menu">
             <th:block sec:authorize="isAuthenticated()">
                 <a class="nav-username" th:href="@{/user/detail}">
-                    <span id="nav-username" sec:authentication="principal.nickname" style="font-weight: bold;"></span>&nbsp;님
+                    <span id="nav-username" 
+                        sec:authentication="principal.nickname"
+                        th:attr="data-user-id=${#authentication.principal.id}"
+                        style="font-weight: bold;">
+                    </span>&nbsp;님
                 </a>
             </th:block>
         </div>

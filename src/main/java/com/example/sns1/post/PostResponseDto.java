@@ -20,6 +20,7 @@ public class PostResponseDto {
     @Getter
     @Builder
     public static class UserDataDto {
+        private Long id;
         private String username;
     }
 
@@ -47,16 +48,16 @@ public class PostResponseDto {
                         .content(answer.getContent())
                         .createDate(answer.getCreateDate() != null ? 
                             answer.getCreateDate().format(formatter) : "")
-                        .author(answer.getAuthor() != null ? 
-                            UserDataDto.builder()
+                        .author(UserDataDto.builder()
+                                .id(answer.getAuthor() != null ? answer.getAuthor().getId() : -1L)
                                 .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "탈퇴한 사용자")
-                                .build() 
-                            : null)
+                                .build())
                         .postId(post.getId())
                         .build())
                     .collect(Collectors.toList()) 
                     : new ArrayList<>())
                 .author(UserDataDto.builder()
+                        .id(post.getAuthor() != null ? post.getAuthor().getId() : -1L)
                         .username(post.getAuthor() != null ? post.getAuthor().getUsername() : "탈퇴한 사용자")
                         .build())
                 .imgUrl(post.getImgUrl())

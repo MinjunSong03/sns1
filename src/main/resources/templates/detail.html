@@ -12,14 +12,14 @@
 
                 <div class="label">사용자명 변경</div>
                 <input type="text" name="newUsername" id="newUsername" th:value="${userData.username}"></input>
-                <button type="button" onclick="updateUsername()" class="btn-submit" style="margin-bottom: 10px;">변경</button>
+                <button type="button" onclick="changeUsername()" class="btn-submit" style="margin-bottom: 10px;">변경</button>
 
                 <div class="label">비밀번호 변경</div>
                 <div>
                     <input type="password" name="currentPassword" id="currentPassword" placeholder="현재 비밀번호">
                     <input type="password" name="newPassword1" id="newPassword1" placeholder="새 비밀번호">
                     <input type="password" name="newPassword2" id="newPassword2" placeholder="새 비밀번호 (확인)">
-                    <button type="button" onclick="updatePassword()" class="btn-submit" style="margin-bottom: 10px;">변경</button>
+                    <button type="button" onclick="changePassword()" class="btn-submit" style="margin-bottom: 10px;">변경</button>
                 </div>
                 <div style="margin-bottom: 10px;">
                     <form th:action="@{/user/logout}" method="post" style="display:inline;">
@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <button type="button" onclick="withdrawal()" class="nav-item" 
-                    style="background:none; border:none; padding:0; cursor:pointer; font-weight: bold; color:inherit;">회원탈퇴</button>
+                    style="background:none; border:none; padding:0; cursor:pointer; font-weight: bold; color:inherit; color:#FF0000;">회원탈퇴</button>
                 </div>
             </div>
         </div>
@@ -92,7 +92,7 @@
         </style>
 
         <script>
-            async function updateUsername() {
+            async function changeUsername() {
                 const newUsername = document.getElementById("newUsername").value;
                 if (!newUsername.trim()) {
                     alert("변경할 이름을 입력해 주세요.");
@@ -132,7 +132,7 @@
                 }
             }
 
-            async function updatePassword() {
+            async function changePassword() {
                 const currentPassword = document.getElementById("currentPassword").value;
                 const newPassword1 = document.getElementById("newPassword1").value;
                 const newPassword2 = document.getElementById("newPassword2").value;

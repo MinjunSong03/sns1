@@ -17,7 +17,9 @@
         <div class="post-answer-box" th:each="post : ${postList}" th:id="'postbox-' + ${post.id}">
             <div class="post-left">
                 <div class="post-header">
-                    <div th:text="${post.author != null ? post.author.username : '탈퇴한 사용자'}"
+                    <div class="username-display"
+                        th:data-user-id="${post.author != null ? post.author.id : ''}"
+                        th:text="${post.author != null ? post.author.username : '탈퇴한 사용자'}"
                         th:style="${post.author != null ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                     </div>
                     <div th:text="${#temporals.format(post.createDate, 'yyyy-MM-dd HH:mm')}">
@@ -35,7 +37,9 @@
                 <div class="answer-box">
                     <div class="answer-content-box" th:each="answer : ${post.answerList}" th:id="'answer-' + ${answer.id}">
                         <div class="post-header">
-                            <div th:text="${answer.author != null ? answer.author.username : '탈퇴한 사용자'}"
+                            <div class="username-display"
+                                th:data-user-id="${answer.author != null ? answer.author.id : ''}"
+                                th:text="${answer.author != null ? answer.author.username : '탈퇴한 사용자'}"
                                 th:style="${answer.author != null ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                             </div>
                             <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
@@ -231,14 +235,53 @@
                     var newAnswer = JSON.parse(message.body);
                     addAnswer(newAnswer);
                 });
+                stompClient.subscribe('/sub/user-update', function (message) {
+                    var data = JSON.parse(message.body);
+                    if (data.type === "WITHDRAWAL") {
+                        handleForceLogout(data.id);
+                    } else {
+                        changeUsername(data.id, data.newUsername);
+                    }
+                });
             });
+
+            async function handleForceLogout(targetUserId) {
+                const navUsername = document.getElementById('nav-username');
+                if (navUsername) {
+                    const myId = navUsername.getAttribute('data-user-id');
+                    
+                    if (myId == targetUserId) {
+                        alert("회원탈퇴가 완료되어 로그아웃 처리되었습니다.");
+
+                        const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                        const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                        const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                        const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                        try {
+                            await fetch("/user/logout", {
+                                method: "POST",
+                                headers: {
+                                    [header]: token
+                                }
+                            });
+                        } catch (error) {
+                            console.error("로그아웃 요청 실패:", error);
+                        } finally {
+                            window.location.replace("/user/login"); 
+                        }
+                    }
+                }
+            }
 
             function addPost(post) {
                 var newPostHtml = `
                     <div class="post-answer-box" id="postbox-${post.id}">
                         <div class="post-left">
                             <div class="post-header" style="margin-bottom: 10px;">
-                                <div style="${post.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
+                                <div class="username-display"
+                                    data-user-id="${post.author ? post.author.id : ''}"
+                                    style="${post.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                                     ${post.author ? post.author.username : '탈퇴한 사용자'}
                                 </div>
                                 <div>${post.createDate}</div>
@@ -276,7 +319,9 @@
                     var newAnswerHtml = `
                         <div class="answer-content-box" id="answer-${answer.id}">
                             <div class="post-header">
-                                <div style="${answer.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
+                                <div class="username-display"
+                                    data-user-id="${answer.author ? answer.author.id : ''}"
+                                    style="${answer.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                                     ${answer.author ? answer.author.username : '탈퇴한 사용자'}
                                 </div>
                                 <div>${answer.createDate}</div>
@@ -286,6 +331,20 @@
                     `;
                     answerContainer.insertAdjacentHTML('beforeend', newAnswerHtml);
                     answerContainer.scrollTop = answerContainer.scrollHeight;
+                }
+            }
+
+            function changeUsername(userId, newUsername) {
+                const targets = document.querySelectorAll(`.username-display[data-user-id='${userId}']`);
+                targets.forEach(el => {
+                    el.innerText = newUsername;
+                });
+                const navUsername = document.getElementById('nav-username');
+                if (navUsername) {
+                    const myId = navUsername.getAttribute('data-user-id');
+                    if (myId == userId) {
+                        navUsername.innerText = newUsername;
+                    }
                 }
             }
         </script>

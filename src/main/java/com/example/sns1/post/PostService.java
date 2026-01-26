@@ -28,7 +28,7 @@ public class PostService {
         post.setCreateDate(LocalDateTime.now());
         post.setAuthor(userData);
         if (file != null && !file.isEmpty()) {
-            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/files"; 
+            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/files/"; 
             File saveFile = new File(projectPath);
             if (!saveFile.exists()) {
                 saveFile.mkdirs();

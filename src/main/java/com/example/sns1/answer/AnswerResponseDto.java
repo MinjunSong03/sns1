@@ -16,6 +16,7 @@ public class AnswerResponseDto {
     @Getter
     @Builder
     public static class UserDataDto {
+        private Long id;
         private String username;
     }
 
@@ -29,8 +30,9 @@ public class AnswerResponseDto {
                         answer.getCreateDate().format(formatter) : "")
                 .postId(answer.getPost().getId())
                 .author(UserDataDto.builder()
-                            .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "탈퇴한 사용자")
-                            .build())
+                        .id(answer.getAuthor() != null ? answer.getAuthor().getId() : -1L)
+                        .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "탈퇴한 사용자")
+                        .build())
                 .build();
     }
 }

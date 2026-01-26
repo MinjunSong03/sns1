@@ -35,11 +35,11 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**", "/ws-stomp")
+            .securityMatcher("/api/**", "/ws-stomp/**")
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/login", "/api/signup", "/ws-stomp").permitAll()
+                .requestMatchers("/api/login", "/api/signup", "/ws-stomp/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
@@ -54,12 +54,9 @@ public class SecurityConfig {
             .authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests
                             .requestMatchers("/user/login", "/user/signup", "/ws-stomp-web/**").permitAll()
                             .requestMatchers("/css/**", "/js/**", "/images/**", "/files/**").permitAll()
-                            .requestMatchers("/h2-console/**").hasRole("ADMIN") 
                             .anyRequest().authenticated())
             .csrf((csrf) -> csrf
-                            .ignoringRequestMatchers("/h2-console/**", "/ws-stomp-web/**"))
-            .headers((headers) -> headers
-                            .addHeaderWriter(new XFrameOptionsHeaderWriter(XFrameOptionsHeaderWriter.XFrameOptionsMode.SAMEORIGIN)))
+                            .ignoringRequestMatchers("/ws-stomp-web/**"))
             .formLogin((formLogin) -> formLogin     
                             .loginPage("/user/login")
                             .loginProcessingUrl("/user/login")

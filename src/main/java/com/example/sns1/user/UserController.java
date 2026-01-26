@@ -3,6 +3,7 @@ package com.example.sns1.user;
 import com.example.sns1.jwt.JwtTokenProvider;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -20,7 +21,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.ui.Model;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 
 @RequiredArgsConstructor
 @Controller
@@ -28,6 +31,7 @@ public class UserController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final SimpMessageSendingOperations messagingTemplate;
 
     @GetMapping("/user/login")
     public String login(Principal principal) {
@@ -57,6 +61,7 @@ public class UserController {
             response.put("token", jwt);
             response.put("username", nickname);
             response.put("email", username);
+            response.put("id", userSecurityDetail.getId());
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "아이디 또는 비밀번호가 일치하지 않습니다.");
@@ -147,6 +152,8 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         try {
             userService.changeUsername(principal.getName(), newUsername);
+            UserData userData = userService.getUser(principal.getName());
+
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UserSecurityDetail userSecurityDetail = (UserSecurityDetail) auth.getPrincipal();
             userSecurityDetail.setNickname(newUsername);
@@ -154,6 +161,12 @@ public class UserController {
             Authentication newAuth = new UsernamePasswordAuthenticationToken(
                 userSecurityDetail, auth.getCredentials(), auth.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(newAuth);
+
+            Map<String, Object> updatePayload = new HashMap<>();
+            updatePayload.put("id", userData.getId());
+            updatePayload.put("newUsername", newUsername);
+
+            messagingTemplate.convertAndSend("/sub/user-update", updatePayload);
 
             response.put("status", "success");
             response.put("message", "사용자명이 변경되었습니다.");
@@ -200,8 +213,17 @@ public class UserController {
     public Map<String, Object> withdrawal(@RequestParam("password") String password, Principal principal, HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         try {
+            UserData userData = userService.getUser(principal.getName());
+            Long deletedUserId = userData.getId();
+
             userService.withdrawal(principal.getName(), password);
             SecurityContextHolder.clearContext();
+
+            Map<String, Object> updatePayload = new HashMap<>();
+            updatePayload.put("type", "WITHDRAWAL");
+            updatePayload.put("id", deletedUserId);
+            messagingTemplate.convertAndSend("/sub/user-update", updatePayload);
+
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
@@ -221,6 +243,13 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         try {
             userService.changeUsername(principal.getName(), newUsername);
+            UserData userData = userService.getUser(principal.getName());
+
+            Map<String, Object> updatePayload = new HashMap<>();
+            updatePayload.put("id", userData.getId());
+            updatePayload.put("newUsername", newUsername);
+            messagingTemplate.convertAndSend("/sub/user-update", updatePayload);
+
             response.put("status", "success");
             response.put("message", "사용자명이 변경되었습니다.");
             response.put("newUsername", newUsername);
@@ -257,16 +286,33 @@ public class UserController {
 
     @PostMapping("/api/withdrawal")
     @ResponseBody
-    public Map<String, Object> withdrawalApi(Principal principal, @RequestParam("password") String password) {
-        Map<String, Object> response = new HashMap<>();
+    public Map<String, Object> withdrawalApi(@RequestParam("password") String password,
+                                             Principal principal, 
+                                             HttpServletResponse response,
+                                             HttpServletRequest request) {
+        Map<String, Object> responseMap = new HashMap<>();
         try {
+            UserData userData = userService.getUser(principal.getName());
+            Long deletedUserId = userData.getId();
+
             userService.withdrawal(principal.getName(), password);
-            response.put("status", "success");
-            response.put("message", "회원 탈퇴가 완료되었습니다.");
+
+            Map<String, Object> updatePayload = new HashMap<>();
+            updatePayload.put("type", "WITHDRAWAL");
+            updatePayload.put("id", deletedUserId);
+            messagingTemplate.convertAndSend("/sub/user-update", updatePayload);
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                new SecurityContextLogoutHandler().logout(request, response, auth);
+            }
+
+            responseMap.put("status", "success");
+            responseMap.put("message", "회원탈퇴가 완료되어 로그아웃 처리되었습니다.");
         } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "비밀번호가 일치하지 않습니다.");
+            responseMap.put("status", "error");
+            responseMap.put("message", "비밀번호가 일치하지 않습니다.");
         }
-        return response;
+        return responseMap;
     }
 }

@@ -1,17 +1,16 @@
 package com.example.sns1.user;
 
-import org.springframework.stereotype.Service;
-
 import com.example.sns1.DataNotFoundException;
 import com.example.sns1.answer.AnswerRepository;
 import com.example.sns1.post.PostRepository;
 
-import java.time.LocalDateTime;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import java.util.Optional;
-import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
 @Service
@@ -32,8 +31,8 @@ public class UserService {
         return user;
     }
 
-    public UserData getUser(String email) {
-        Optional<UserData> userData = this.userRepository.findByEmail(email);
+    public UserData getUser(Long userId) {
+        Optional<UserData> userData = this.userRepository.findById(userId);
         if (userData.isPresent()) {
             return userData.get();
         } else {
@@ -41,18 +40,18 @@ public class UserService {
         }
     }
 
-    public void changeUsername(String email, String newUsername) {
+    public void changeUsername(Long userId, String newUsername) {
         if (userRepository.findByUsername(newUsername).isPresent()) {
             throw new DataIntegrityViolationException("이미 존재하는 사용자명입니다.");
         }
         
-        UserData userData = this.getUser(email);
+        UserData userData = this.getUser(userId);
         userData.setUsername(newUsername);
         this.userRepository.save(userData);
     }
 
-    public void changePassword(String email, String currentPassword, String newPassword) {
-        UserData userData = this.getUser(email);
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        UserData userData = this.getUser(userId);
         
         if (!passwordEncoder.matches(currentPassword, userData.getPassword())) {
             throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");
@@ -63,13 +62,13 @@ public class UserService {
     }
 
     @Transactional
-    public void withdrawal(String email, String password) {
-        UserData userData = this.getUser(email);
-        if (!passwordEncoder.matches(password, userData.getPassword())) {
+    public void withdrawal(Long userId, String password) {
+        UserData author = this.getUser(userId);
+        if (!passwordEncoder.matches(password, author.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
-        postRepository.updateAuthorToNull(userData);
-        answerRepository.updateAuthorToNull(userData);
-        this.userRepository.delete(userData);
+        postRepository.updateAuthorToNull(userId);
+        answerRepository.updateAuthorToNull(userId);
+        this.userRepository.delete(author);
     }
 }

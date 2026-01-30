@@ -1,17 +1,17 @@
 package com.example.sns1.post;
 
-import java.util.List;
-import java.time.LocalDateTime;
-import org.springframework.stereotype.Service;
-import java.util.Optional;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.example.sns1.user.UserData;
 
+import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import java.io.File;
 import java.io.IOException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
+import jakarta.transaction.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -50,5 +50,22 @@ public class PostService {
         } else {
             throw new RuntimeException("Post not found");
         }
+    }
+
+    @Transactional
+    public void deletePost(Long userId, Long postId) {
+        Post post = this.postRepository.findById(postId)
+                    .orElseThrow(()->new RuntimeException("Post not found"));
+        if (post.getDeletedAt() != null) {
+            throw new RuntimeException("이미 삭제된 게시물입니다.");
+        }
+        if (post.getAuthor() == null) {
+            throw new RuntimeException("게시물 삭제 권한이 없습니다.");
+        }
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new RuntimeException("게시물 삭제 권한이 없습니다.");
+        }
+        post.setDeletedAt(LocalDateTime.now());
+        this.postRepository.save(post);
     }
 }

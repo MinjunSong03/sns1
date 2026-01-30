@@ -12,11 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import java.util.Map;
-import java.security.Principal;
-import java.util.HashMap;
 import org.springframework.dao.DataIntegrityViolationException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,6 +20,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.ui.Model;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import java.util.Map;
+import java.security.Principal;
+import java.util.HashMap;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Controller
@@ -32,7 +33,7 @@ public class UserController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final SimpMessageSendingOperations messagingTemplate;
-
+    
     @GetMapping("/user/login")
     public String login(Principal principal) {
         if (principal != null) {
@@ -41,7 +42,7 @@ public class UserController {
         return "loginpage";
     }
 
-    @PostMapping("/api/login")
+    @PostMapping("/api/user/login")
     @ResponseBody  
     public Map<String, Object> loginApi(@RequestParam("username") String username, 
                                         @RequestParam("password") String password) {
@@ -69,7 +70,7 @@ public class UserController {
         return response;
     }
 
-    @PostMapping("/api/logout")
+    @PostMapping("/api/user/logout")
     @ResponseBody
     public Map<String, Object> logoutApi() {
         Map<String, Object> response = new HashMap<>();
@@ -79,7 +80,8 @@ public class UserController {
         }
 
     @GetMapping("/user/signup")
-    public String signup(UserCreateForm userCreateForm, Principal principal) {
+    public String signup(UserCreateForm userCreateForm, 
+                         Principal principal) {
         if (principal != null) {
         return "redirect:/";
         }
@@ -87,7 +89,8 @@ public class UserController {
     }
 
     @PostMapping("/user/signup")
-    public String signup(@Valid UserCreateForm userCreateForm, BindingResult bindingResult) {
+    public String signup(@Valid UserCreateForm userCreateForm, 
+                         BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return "signuppage";
         }
@@ -111,7 +114,7 @@ public class UserController {
         return "redirect:/user/login";
     }
 
-    @PostMapping("/api/signup")
+    @PostMapping("/api/user/signup")
     @ResponseBody
     public Map<String, Object> signupApi(@RequestParam("email") String email, 
                                          @RequestParam("password1") String password1,
@@ -139,27 +142,28 @@ public class UserController {
     }
 
     @GetMapping("/user/detail")
-    public String detail(Model model, Principal principal) {
-        String email = principal.getName();
-        UserData userData = this.userService.getUser(email);
+    public String detail(Model model, @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        Long userId = userSecurityDetail.getId();
+        UserData userData = this.userService.getUser(userId);
         model.addAttribute("userData", userData);
         return "detail";
     }
 
     @PostMapping("/user/changeUsername")
     @ResponseBody
-    public Map<String, Object> changeUsername(Principal principal, @RequestParam("newUsername") String newUsername) {
+    public Map<String, Object> changeUsername(@AuthenticationPrincipal UserSecurityDetail userSecurityDetail, 
+                                              @RequestParam("newUsername") String newUsername) {
         Map<String, Object> response = new HashMap<>();
         try {
-            userService.changeUsername(principal.getName(), newUsername);
-            UserData userData = userService.getUser(principal.getName());
+            userService.changeUsername(userSecurityDetail.getId(), newUsername);
+            UserData userData = userService.getUser(userSecurityDetail.getId());
 
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            UserSecurityDetail userSecurityDetail = (UserSecurityDetail) auth.getPrincipal();
-            userSecurityDetail.setNickname(newUsername);
+            UserSecurityDetail uSecurityDetail = (UserSecurityDetail) auth.getPrincipal();
+            uSecurityDetail.setNickname(newUsername);
             
             Authentication newAuth = new UsernamePasswordAuthenticationToken(
-                userSecurityDetail, auth.getCredentials(), auth.getAuthorities());
+                uSecurityDetail, auth.getCredentials(), auth.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(newAuth);
 
             Map<String, Object> updatePayload = new HashMap<>();
@@ -180,7 +184,7 @@ public class UserController {
 
     @PostMapping("/user/changePassword")
     @ResponseBody
-    public Map<String, Object> changePassword(Principal principal, 
+    public Map<String, Object> changePassword(@AuthenticationPrincipal UserSecurityDetail userSecurityDetail, 
                                               @RequestParam("currentPassword") String currentPassword,
                                               @RequestParam("newPassword1") String newPassword1,
                                               @RequestParam("newPassword2") String newPassword2,
@@ -193,7 +197,7 @@ public class UserController {
              return response;
         }
         try {
-            userService.changePassword(principal.getName(), currentPassword, newPassword1);
+            userService.changePassword(userSecurityDetail.getId(), currentPassword, newPassword1);
             SecurityContextHolder.clearContext();
             HttpSession session = request.getSession(false);
             if (session != null) {
@@ -210,13 +214,15 @@ public class UserController {
 
     @PostMapping("/user/withdrawal")
     @ResponseBody
-    public Map<String, Object> withdrawal(@RequestParam("password") String password, Principal principal, HttpServletRequest request) {
+    public Map<String, Object> withdrawal(@RequestParam("password") String password, 
+                                          @AuthenticationPrincipal UserSecurityDetail userSecurityDetail, 
+                                          HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         try {
-            UserData userData = userService.getUser(principal.getName());
+            UserData userData = userService.getUser(userSecurityDetail.getId());
             Long deletedUserId = userData.getId();
 
-            userService.withdrawal(principal.getName(), password);
+            userService.withdrawal(userSecurityDetail.getId(), password);
             SecurityContextHolder.clearContext();
 
             Map<String, Object> updatePayload = new HashMap<>();
@@ -237,13 +243,14 @@ public class UserController {
         return response;
     }
 
-    @PostMapping("/api/changeUsername")
+    @PostMapping("/api/user/changeUsername")
     @ResponseBody
-    public Map<String, Object> changeUsernameApi(Principal principal, @RequestParam("newUsername") String newUsername) {
+    public Map<String, Object> changeUsernameApi(@AuthenticationPrincipal UserSecurityDetail userSecurityDetail, 
+                                                 @RequestParam("newUsername") String newUsername) {
         Map<String, Object> response = new HashMap<>();
         try {
-            userService.changeUsername(principal.getName(), newUsername);
-            UserData userData = userService.getUser(principal.getName());
+            userService.changeUsername(userSecurityDetail.getId(), newUsername);
+            UserData userData = userService.getUser(userSecurityDetail.getId());
 
             Map<String, Object> updatePayload = new HashMap<>();
             updatePayload.put("id", userData.getId());
@@ -260,12 +267,12 @@ public class UserController {
         return response;
     }
 
-    @PostMapping("/api/changePassword")
+    @PostMapping("/api/user/changePassword")
     @ResponseBody
-    public Map<String, Object> changePasswordApi(Principal principal,
-                                              @RequestParam("currentPassword") String currentPassword,
-                                              @RequestParam("newPassword1") String newPassword1,
-                                              @RequestParam("newPassword2") String newPassword2) {
+    public Map<String, Object> changePasswordApi(@AuthenticationPrincipal UserSecurityDetail userSecurityDetail,
+                                                 @RequestParam("currentPassword") String currentPassword,
+                                                 @RequestParam("newPassword1") String newPassword1,
+                                                 @RequestParam("newPassword2") String newPassword2) {
         Map<String, Object> response = new HashMap<>();
 
         if (!newPassword1.equals(newPassword2)) {
@@ -274,7 +281,7 @@ public class UserController {
              return response;
         }
         try {
-            userService.changePassword(principal.getName(), currentPassword, newPassword1);
+            userService.changePassword(userSecurityDetail.getId(), currentPassword, newPassword1);
             response.put("status", "success");
             response.put("message", "비밀번호가 변경되었습니다.");
         } catch (Exception e) {
@@ -283,19 +290,19 @@ public class UserController {
         }
         return response;
     }
-
-    @PostMapping("/api/withdrawal")
+    
+    @PostMapping("/api/user/withdrawal")
     @ResponseBody
     public Map<String, Object> withdrawalApi(@RequestParam("password") String password,
-                                             Principal principal, 
+                                             @AuthenticationPrincipal UserSecurityDetail userSecurityDetail, 
                                              HttpServletResponse response,
                                              HttpServletRequest request) {
         Map<String, Object> responseMap = new HashMap<>();
         try {
-            UserData userData = userService.getUser(principal.getName());
+            UserData userData = userService.getUser(userSecurityDetail.getId());
             Long deletedUserId = userData.getId();
 
-            userService.withdrawal(principal.getName(), password);
+            userService.withdrawal(userSecurityDetail.getId(), password);
 
             Map<String, Object> updatePayload = new HashMap<>();
             updatePayload.put("type", "WITHDRAWAL");

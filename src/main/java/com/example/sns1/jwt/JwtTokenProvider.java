@@ -1,5 +1,7 @@
 package com.example.sns1.jwt;
 
+import com.example.sns1.user.UserSecurityDetail;
+
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -7,8 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import java.security.Key;
@@ -31,6 +31,8 @@ public class JwtTokenProvider {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
+        
+        UserSecurityDetail userSecurityDetail = (UserSecurityDetail) authentication.getPrincipal();
 
         long now = (new Date()).getTime();
         Date accessTokenExpiresIn = new Date(now + 2592000000L); 
@@ -38,6 +40,8 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim("auth", authorities)
+                .claim("id", userSecurityDetail.getId())
+                .claim("nickname", userSecurityDetail.getNickname())
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
@@ -52,8 +56,12 @@ public class JwtTokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        Long id = ((Number) claims.get("id")).longValue();
+        String nickname = (String) claims.get("nickname");
+        String email = claims.getSubject();
+
+        UserSecurityDetail userSecurityDetail = new UserSecurityDetail(email, "", authorities, id, nickname);
+        return new UsernamePasswordAuthenticationToken(userSecurityDetail, "", authorities);
     }
 
     public boolean validateToken(String token) {

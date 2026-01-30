@@ -1,25 +1,27 @@
 package com.example.sns1.post;
 
+import com.example.sns1.user.UserData;
+import com.example.sns1.user.UserSecurityDetail;
+import com.example.sns1.user.UserService;
+
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.example.sns1.user.UserData;
-import com.example.sns1.user.UserService;
-
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import java.security.Principal;
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
+
 
 @RequiredArgsConstructor
 @Controller
@@ -52,8 +54,8 @@ public class PostController {
     public ResponseEntity<?> createPost(
             @RequestParam("content") String content,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            Principal principal) {
-        return processCreatePost(content, file, principal);
+            @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        return processCreatePost(content, file, userSecurityDetail);
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -62,11 +64,11 @@ public class PostController {
     public ResponseEntity<?> createPostApi(
             @RequestParam("content") String content,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            Principal principal) {
-        return processCreatePost(content, file, principal);
+            @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        return processCreatePost(content, file, userSecurityDetail);
     }
 
-    private ResponseEntity<?> processCreatePost(String content, MultipartFile file, Principal principal) {
+    private ResponseEntity<?> processCreatePost(String content, MultipartFile file, @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
         boolean isContentEmpty = (content == null || content.trim().isEmpty());
         boolean isFileEmpty = (file == null || file.isEmpty());
 
@@ -76,7 +78,7 @@ public class PostController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
         try {
-            UserData userData = this.userService.getUser(principal.getName());
+            UserData userData = this.userService.getUser(userSecurityDetail.getId());
             Post savedPost = this.postService.create(content, userData, file);
             PostResponseDto responseDto = PostResponseDto.from(savedPost);
             messagingTemplate.convertAndSend("/sub/posts", responseDto);
@@ -86,4 +88,18 @@ public class PostController {
             return ResponseEntity.internalServerError().body("업로드 중 오류가 발생했습니다.");
         }
     }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/post/delete/{postId}")
+    @ResponseBody
+    public ResponseEntity<?> deletePost(@PathVariable("postId") Long postId,
+                             @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        try {
+            postService.deletePost(userSecurityDetail.getId(), postId);
+            return ResponseEntity.ok().body("게시물이 삭제되었습니다.");
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
 }

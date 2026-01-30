@@ -1,8 +1,5 @@
 package com.example.sns1.post;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import com.example.sns1.answer.Answer;
 import com.example.sns1.user.UserData;
 
@@ -17,6 +14,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import lombok.Getter;
 import lombok.Setter;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -39,4 +38,6 @@ public class Post {
     private UserData author;
 
     private String imgUrl;
+
+    private LocalDateTime deletedAt;
 }

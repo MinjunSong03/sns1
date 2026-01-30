@@ -39,7 +39,7 @@ public class PostResponseDto {
 
         return PostResponseDto.builder()
                 .id(post.getId())
-                .content(post.getContent())
+                .content(post.getDeletedAt() != null ? "삭제된 게시물입니다." : post.getContent())
                 .createDate(post.getCreateDate() != null ? 
                     post.getCreateDate().format(formatter) : "")
                 .answerList(post.getAnswerList() != null ? 
@@ -48,19 +48,23 @@ public class PostResponseDto {
                         .content(answer.getContent())
                         .createDate(answer.getCreateDate() != null ? 
                             answer.getCreateDate().format(formatter) : "")
-                        .author(UserDataDto.builder()
-                                .id(answer.getAuthor() != null ? answer.getAuthor().getId() : -1L)
-                                .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "탈퇴한 사용자")
-                                .build())
+                        .author(answer.getAuthor() != null ? 
+                                UserDataDto.builder()
+                                    .id(answer.getAuthor().getId())
+                                    .username(answer.getAuthor().getUsername())
+                                    .build() 
+                                : null)
                         .postId(post.getId())
                         .build())
                     .collect(Collectors.toList()) 
                     : new ArrayList<>())
-                .author(UserDataDto.builder()
-                        .id(post.getAuthor() != null ? post.getAuthor().getId() : -1L)
-                        .username(post.getAuthor() != null ? post.getAuthor().getUsername() : "탈퇴한 사용자")
-                        .build())
-                .imgUrl(post.getImgUrl())
+                .author(post.getAuthor() != null ? 
+                        UserDataDto.builder()
+                            .id(post.getAuthor().getId())
+                            .username(post.getAuthor().getUsername())
+                            .build() 
+                        : null)
+                .imgUrl(post.getDeletedAt() != null ? null : post.getImgUrl())
                 .build();
     }
 }

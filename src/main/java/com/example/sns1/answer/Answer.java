@@ -1,7 +1,5 @@
 package com.example.sns1.answer;
 
-import java.time.LocalDateTime;
-
 import com.example.sns1.post.Post;
 import com.example.sns1.user.UserData;
 
@@ -13,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter

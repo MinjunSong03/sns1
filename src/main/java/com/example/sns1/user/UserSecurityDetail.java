@@ -13,7 +13,7 @@ public class UserSecurityDetail extends User {
     private Long id;
     private String nickname; 
 
-    public UserSecurityDetail(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities, String nickname) {
+    public UserSecurityDetail(String email, String password, Collection<? extends GrantedAuthority> authorities, Long id, String nickname) {
         super(email, password, authorities);
         this.id = id;
         this.nickname = nickname;

@@ -29,10 +29,12 @@ public class AnswerResponseDto {
                 .createDate(answer.getCreateDate() != null ? 
                         answer.getCreateDate().format(formatter) : "")
                 .postId(answer.getPost().getId())
-                .author(UserDataDto.builder()
-                        .id(answer.getAuthor() != null ? answer.getAuthor().getId() : -1L)
-                        .username(answer.getAuthor() != null ? answer.getAuthor().getUsername() : "탈퇴한 사용자")
-                        .build())
+                .author(answer.getAuthor() != null ? 
+                        UserDataDto.builder()
+                            .id(answer.getAuthor().getId())
+                            .username(answer.getAuthor().getUsername())
+                            .build() 
+                        : null)
                 .build();
     }
 }

@@ -26,10 +26,19 @@
                     </div>
                 </div> 
                 <div class="post-box">
-                    <div th:text="${post.content}" style="white-space: pre-wrap;"></div>
-                    <div th:if="${post.imgUrl != null}">
+                    <div th:text="${post.deletedAt != null ? '삭제된 게시물입니다.' : post.content}" 
+                        th:style="${post.deletedAt != null ? 'white-space: pre-wrap; color: #999;' : 'white-space: pre-wrap;'}">
+                    </div>
+                    <div th:if="${post.imgUrl != null and post.deletedAt == null}">
                         <img th:src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">
                     </div>
+                </div>
+                <div th:if="${post.author != null and #authentication.principal.username == post.author.email}"
+                    style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                    <button type="button"
+                            th:onclick="'deletePost(' + ${post.id} + ')'"
+                            style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                            삭제</button>
                 </div>
             </div>
 
@@ -60,15 +69,17 @@
                 <p>등록된 게시물이 없습니다.</p>
             </div>
         </div>
-        <script> // 게시물 댓글 스크롤을 최하단으로 이동.
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        <script> 
+            // 게시물 댓글 스크롤을 최하단으로 이동.
             document.addEventListener("DOMContentLoaded", function() {
                 const answerBoxes = document.querySelectorAll('.answer-box');
                 answerBoxes.forEach(function(box) {
                     box.scrollTop = box.scrollHeight;
                 });
             });
-        </script>
-        <script> // AJAX 댓글 등록.
+            // AJAX 댓글 등록.
             async function submitAnswer(form, event, postId) {
                 event.preventDefault();
 
@@ -100,13 +111,13 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                            const postBox = form.closest('.post-right');
-                            const answerContainer = postBox.querySelector('.answer-box');
-                            textarea.value = ""; 
-                            answerContainer.scrollTop = answerContainer.scrollHeight; 
+                        const postBox = form.closest('.post-right');
+                        const answerContainer = postBox.querySelector('.answer-box');
+                        textarea.value = ""; 
+                        answerContainer.scrollTop = answerContainer.scrollHeight; 
                     } else {
                         console.log("Error status:", response.status);
-                        alert("등록 실패: 로그인이 되어있는지 확인해주세요.");
+                        alert("로그인이 되어있는지 확인해주세요.");
                     }
                 } catch (error) {
                     console.error(error);
@@ -114,8 +125,7 @@
                 }
                 return false;
             }
-        </script>
-        <script> // 댓글 입력 중 댓글 입력창 높이에 의한 댓글창 가림 해결.
+            // 댓글 입력 중 댓글 입력창 높이에 의한 댓글창 가림 해결.
             document.addEventListener("input", function(e) {
                 if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input")) {
                     
@@ -151,8 +161,7 @@
                             e.target.dataset.prevHeight = e.target.clientHeight;
                         }
                     });
-        </script>
-        <script>
+
             // 선택된 파일명을 화면에 보여주는 기능.
             function updateFileName() {
                 const fileInput = document.getElementById('file');
@@ -216,11 +225,43 @@
                 }
                 return false;
             }
-        </script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-        <script>
+            // AJAX 게시물 삭제.
+            async function deletePost(postId) {
+                if (!confirm("게시물을 삭제하시겠습니까?")) {
+                    return;
+                }
+
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                try {
+                    const response = await fetch(`/post/delete/${postId}`, {
+                        method: "POST",
+                        headers: {
+                            [header]: token
+                        }
+                    });
+
+                    if (response.ok) {
+                        alert("게시물이 삭제되었습니다.");
+                        const postContainer = document.getElementById('postbox-' + postId);
+                        if (postContainer) {
+                            const contentBox = postContainer.querySelector('.post-box');
+                            contentBox.innerHTML = '<div style="white-space: pre-wrap; color: #999;">삭제된 게시물입니다.</div>';
+                        }
+                    } else {
+                        const errorMsg = await response.text();
+                        alert(errorMsg);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("오류가 발생했습니다.");
+                }
+            }
+
             var socket = new SockJS('/ws-stomp-web');
             var stompClient = Stomp.over(socket);
 
@@ -275,6 +316,12 @@
             }
 
             function addPost(post) {
+                if (document.getElementById('postbox-' + post.id)) {
+                    return;
+                }
+                const navUsername = document.getElementById('nav-username');
+                const myId = navUsername ? navUsername.getAttribute('data-user-id') : null;
+                const isMyPost = post.author && (post.author.id == myId);
                 var newPostHtml = `
                     <div class="post-answer-box" id="postbox-${post.id}">
                         <div class="post-left">
@@ -287,9 +334,17 @@
                                 <div>${post.createDate}</div>
                             </div>
                             <div class="post-box">
-                                <div style="white-space: pre-wrap;">${post.content}</div>
-                                ${post.imgUrl ? `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">` : ''}
+                                <div style="${post.content === '삭제된 게시물입니다.' ? 'white-space: pre-wrap; color: #999;' : 'white-space: pre-wrap;' }">${post.content}</div>
+                                ${post.imgUrl && !(post.content === '삭제된 게시물입니다.') ? `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">` : ''}
                             </div>
+                            ${isMyPost ? 
+                            `<div style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                                <button type="button" 
+                                        onclick="deletePost(${post.id})"
+                                        style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                                    삭제
+                                </button>
+                            </div>` : ''}
                         </div>
                         <div class="post-right">
                             <div class="answer-box"></div>

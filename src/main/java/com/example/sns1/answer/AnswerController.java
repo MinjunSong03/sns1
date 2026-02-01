@@ -6,7 +6,10 @@ import com.example.sns1.user.UserData;
 import com.example.sns1.user.UserSecurityDetail;
 import com.example.sns1.user.UserService;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.method.P;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -25,25 +28,25 @@ public class AnswerController {
     private final UserService userService;
     private final SimpMessagingTemplate messagingTemplate;
 
-        @PreAuthorize("isAuthenticated()")
-        @PostMapping("/answer/create/{id}")
-        @ResponseBody
-        public ResponseEntity<?> createAnswer(
-                @PathVariable("id") Long id,
-                @RequestParam("content") String content,
-                @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
-                    return processCreateAnswer(id, content, userSecurityDetail);
-                }
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/answer/create/{id}")
+    @ResponseBody
+    public ResponseEntity<?> createAnswer(
+            @PathVariable("id") Long id,
+            @RequestParam("content") String content,
+            @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+                return processCreateAnswer(id, content, userSecurityDetail);
+            }
 
-        @PreAuthorize("isAuthenticated()")
-        @PostMapping("/api/answer/create/{id}")
-        @ResponseBody
-        public ResponseEntity<?> createAnswerApi(
-                @PathVariable("id") Long id,
-                @RequestParam("content") String content,
-                @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
-                    return processCreateAnswer(id, content, userSecurityDetail);
-                }
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/api/answer/create/{id}")
+    @ResponseBody
+    public ResponseEntity<?> createAnswerApi(
+            @PathVariable("id") Long id,
+            @RequestParam("content") String content,
+            @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+                return processCreateAnswer(id, content, userSecurityDetail);
+            }
 
 
     private ResponseEntity<?> processCreateAnswer(Long id, String content, @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
@@ -60,6 +63,39 @@ public class AnswerController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("댓글 등록 중 오류가 발생했습니다.");
+        }
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/answer/delete/{answerId}")
+    @ResponseBody
+    public ResponseEntity<?> deleteAnswer(@PathVariable("answerId") Long answerId,
+                                          @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        try {
+            answerService.deleteAnswer(userSecurityDetail.getId(), answerId);
+            Answer answer = answerService.getAnswer(answerId);
+            AnswerResponseDto answerResponseDto = AnswerResponseDto.from(answer);
+            messagingTemplate.convertAndSend("/sub/answers", answerResponseDto);
+            return ResponseEntity.ok().body("댓글이 삭제되었습니다.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("answer/modify/{answerId}")
+    @ResponseBody
+    public ResponseEntity<?> modifyAnswer(@PathVariable("answerId") Long answerId,
+                                          @RequestParam("newContent") String newContent,
+                                          @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        try {
+            answerService.modifyAnswer(userSecurityDetail.getId(), answerId, newContent);
+            Answer answer = answerService.getAnswer(answerId);
+            AnswerResponseDto answerResponseDto = AnswerResponseDto.from(answer);
+            messagingTemplate.convertAndSend("/sub/answers", answerResponseDto);
+            return ResponseEntity.ok().body("댓글이 수정되었습니다.");
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

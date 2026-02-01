@@ -93,13 +93,34 @@ public class PostController {
     @PostMapping("/post/delete/{postId}")
     @ResponseBody
     public ResponseEntity<?> deletePost(@PathVariable("postId") Long postId,
-                             @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+                                        @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
         try {
             postService.deletePost(userSecurityDetail.getId(), postId);
+            Post post = postService.getPost(postId); 
+            PostResponseDto postResponseDto = PostResponseDto.from(post);
+            messagingTemplate.convertAndSend("/sub/posts", postResponseDto);
             return ResponseEntity.ok().body("게시물이 삭제되었습니다.");
         } catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/post/modify/{postId}")
+    @ResponseBody
+    public ResponseEntity<?> modifyPost(@PathVariable("postId") Long postId,
+                                        @RequestParam("newContent") String newContent,
+                                        @RequestParam(value = "newFile", required = false) MultipartFile newFile,
+                                        @RequestParam(value = "deleteImg", required = false, defaultValue = "false") Boolean deleteImg,
+                                        @AuthenticationPrincipal UserSecurityDetail userSecurityDetail) {
+        try {
+            postService.modifyPost(userSecurityDetail.getId(), postId, newContent, newFile, deleteImg);
+            Post post = postService.getPost(postId);
+            PostResponseDto postResponseDto = PostResponseDto.from(post);
+            messagingTemplate.convertAndSend("/sub/posts", postResponseDto);
+            return ResponseEntity.ok().body("게시물이 수정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

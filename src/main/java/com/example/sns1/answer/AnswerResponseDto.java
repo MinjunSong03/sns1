@@ -25,7 +25,7 @@ public class AnswerResponseDto {
 
         return AnswerResponseDto.builder()
                 .id(answer.getId())
-                .content(answer.getContent())
+                .content(answer.getDeletedAt() != null ? "삭제된 댓글입니다." : answer.getContent())
                 .createDate(answer.getCreateDate() != null ? 
                         answer.getCreateDate().format(formatter) : "")
                 .postId(answer.getPost().getId())

@@ -14,7 +14,7 @@
             </form>
         </div>
 
-        <div class="post-answer-box" th:each="post : ${postList}" th:id="'postbox-' + ${post.id}">
+        <div class="post-answer-box" th:each="post : ${postList}" th:id="'post-answer-box-' + ${post.id}">
             <div class="post-left">
                 <div class="post-header">
                     <div class="username-display"
@@ -33,8 +33,13 @@
                         <img th:src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">
                     </div>
                 </div>
-                <div th:if="${post.author != null and #authentication.principal.username == post.author.email}"
+                <div th:if="${post.author != null and #authentication.principal.id == post.author.id}"
                     style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                    <button type="button"
+                            th:onclick="'modifyPost(' + ${post.id} + ')'"
+                            style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                            수정</button>
+                    <div class="post-vertical-line"></div>
                     <button type="button"
                             th:onclick="'deletePost(' + ${post.id} + ')'"
                             style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
@@ -54,10 +59,38 @@
                             <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
                         </div>
                         <div th:text="${answer.content}" style="white-space: pre-wrap;"></div>
+                        <div th:if="${answer.author != null and #authentication.principal.id == answer.author.id}"
+                            style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                            <button type="button"
+                                    th:onclick="'modifyAnswer(' + ${answer.id} + ')'"
+                                    style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                                    수정</button>
+                            <div class="answer-vertical-line"></div>
+                            <button type="button"
+                                    th:onclick="'deleteAnswer(' + ${answer.id} + ')'"
+                                    style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                                    삭제</button>
+                        </div>
+                        <div th:id="'modifyAnswer-' + ${answer.id}" class="modal-overlay">
+                            <div class="modal-box">
+                                <div class="modal-header">댓글 수정</div>
+                                
+                                <textarea th:id="'modify-answer-content-' + ${answer.id}" 
+                                        class="modify-content-input" 
+                                        placeholder="수정할 내용을 입력해 주세요."></textarea>
+
+                                <div class="modal-footer">
+                                    <div></div> <div style="gap: 10px;">
+                                        <button type="button" class="btn-gray" th:onclick="'closeModifyAnswerModal(' + ${answer.id} + ')'">취소</button>
+                                        <button type="button" class="btn-blue" th:onclick="'submitModifyAnswer(' + ${answer.id} + ')'">수정 완료</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="horizontal-line" th:if="${!post.answerList.isEmpty()}"></div>
+                <div class="horizontal-line"></div>
                 <form th:onsubmit="'return submitAnswer(this, event, ' + ${post.id} + ')'">
                     <div class="answer-footer">
                         <textarea class="answer-input-box answer-input" placeholder="댓글을 작성해 주세요."></textarea>
@@ -65,8 +98,34 @@
                     </div>
                 </form>
             </div>
-            <div th:if="${postList.isEmpty()}" style="text-align: center; color: #888; padding: 20px;">
-                <p>등록된 게시물이 없습니다.</p>
+            <div th:id="'modifyPost-' + ${post.id}" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-header">게시물 수정</div>
+                    
+                    <textarea th:id="'modify-content-input-' + ${post.id}" class="modify-content-input" placeholder="수정할 내용을 입력해 주세요."></textarea>
+
+                    <div th:id="'modify-image-container-' + ${post.id}" style="position: relative; display: none; margin-top: 10px;">
+                        <img th:id="'modify-image-preview-' + ${post.id}" src="" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 30px;">
+                        <button type="button" 
+                                th:onclick="'removeImageInModal(' + ${post.id} + ')'"
+                                class="x-button">X
+                        </button>
+                    </div>
+                    <input type="checkbox" th:id="'delete-img-check-' + ${post.id}" style="display: none;">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                        <span th:id="'modify-filename-' + ${post.id}" style="font-size: 13px; color: #1877f2;"></span>
+                        <input type="file" th:id="'modify-file-' + ${post.id}" style="display: none;" th:onchange="'updateModifyFile(' + ${post.id} + ')'">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-gray" th:onclick="'document.getElementById(\'modify-file-' + ${post.id} + '\').click()'">추가</button>
+                        <div style="gap: 10px;">
+                            <button type="button" class="btn-gray" th:onclick="'closeModifyPostModal(' + ${post.id} + ')'">취소</button>
+                            <button type="button" class="btn-blue" th:onclick="'submitModifyPost(' + ${post.id} + ')'">수정 완료</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
@@ -79,52 +138,6 @@
                     box.scrollTop = box.scrollHeight;
                 });
             });
-            // AJAX 댓글 등록.
-            async function submitAnswer(form, event, postId) {
-                event.preventDefault();
-
-                const textarea = form.querySelector("textarea");
-                const content = textarea.value;
-                
-
-                if (content.trim() === "") {
-                    alert("내용을 입력해주세요.");
-                    return false;
-                }
-
-                const formData = new FormData();
-                formData.append("content", content);
-
-                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
-                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
-                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
-                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
-
-                try {
-                    const response = await fetch(`/answer/create/${postId}`, {
-                        method: "POST",
-                        headers: { 
-                            [header]: token 
-                        },
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const postBox = form.closest('.post-right');
-                        const answerContainer = postBox.querySelector('.answer-box');
-                        textarea.value = ""; 
-                        answerContainer.scrollTop = answerContainer.scrollHeight; 
-                    } else {
-                        console.log("Error status:", response.status);
-                        alert("로그인이 되어있는지 확인해주세요.");
-                    }
-                } catch (error) {
-                    console.error(error);
-                    alert("시스템 오류가 발생했습니다.");
-                }
-                return false;
-            }
             // 댓글 입력 중 댓글 입력창 높이에 의한 댓글창 가림 해결.
             document.addEventListener("input", function(e) {
                 if (e.target.tagName.toLowerCase() === "textarea" && e.target.classList.contains("answer-input")) {
@@ -226,6 +239,117 @@
                 return false;
             }
 
+            // AJAX 게시물 수정.
+            function updateModifyFile(postId) {
+                const fileInput = document.getElementById('modify-file-' + postId);
+                const fileNameDisplay = document.getElementById('modify-filename-' + postId);
+                const previewContainer = document.getElementById('modify-image-container-' + postId);
+                const previewImg = document.getElementById('modify-image-preview-' + postId);
+                const deleteCheck = document.getElementById('delete-img-check-' + postId);
+                if (fileInput.files.length > 0) {
+                    fileNameDisplay.textContent = fileInput.files[0].name;
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                    deleteCheck.checked = false;
+                } else {
+                    fileNameDisplay.textContent = "";
+                }
+            }
+
+            function modifyPost(postId) {
+                const postAnswerBox = document.getElementById('post-answer-box-' + postId);
+                const contentDiv = postAnswerBox.querySelector('.post-box > div:first-child');
+                const oldContent = contentDiv.innerText;
+
+                if (oldContent === "삭제된 게시물입니다.") {
+                alert("삭제된 게시물입니다.");
+                return;
+                }
+
+                document.getElementById('modify-content-input-' + postId).value = oldContent;
+                document.getElementById('modify-file-' + postId).value = "";
+                document.getElementById('modify-filename-' + postId).textContent = "";
+                document.getElementById('delete-img-check-' + postId).checked = false;
+
+                const existingImgTag = postAnswerBox.querySelector('.post-box img');
+                const previewContainer = document.getElementById('modify-image-container-' + postId);
+                const previewImg = document.getElementById('modify-image-preview-' + postId);
+
+                if (existingImgTag) {
+                    previewImg.src = existingImgTag.src;
+                    previewContainer.style.display = 'block';
+                } else {
+                    previewContainer.style.display = 'none';
+                    previewImg.src = "";
+                }
+                
+                const modal = document.getElementById('modifyPost-' + postId).style.display = 'flex';
+            }
+
+            function removeImageInModal(postId) {
+                document.getElementById('modify-image-container-' + postId).style.display = 'none';
+                document.getElementById('modify-file-' + postId).value = "";
+                document.getElementById('modify-filename-' + postId).textContent = "";
+                document.getElementById('delete-img-check-' + postId).checked = true;
+            }
+
+            function closeModifyPostModal(postId) {
+                document.getElementById('modifyPost-' + postId).style.display = 'none';
+            }
+
+            async function submitModifyPost(postId) {
+                const contentInput = document.getElementById('modify-content-input-' + postId);
+                const fileInput = document.getElementById('modify-file-' + postId);
+                const deleteCheck = document.getElementById('delete-img-check-' + postId);
+
+                const imageContainer = document.getElementById('modify-image-container-' + postId);
+                const isImageVisible = imageContainer.style.display !== 'none';
+
+                const isDeleteChecked = deleteCheck.checked;
+                const newContent = contentInput.value;
+                const newFile = fileInput.files[0];
+
+                if (newContent.trim() === "" && !isImageVisible) {
+                    alert("내용을 입력해 주세요.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("newContent", newContent);
+                if (newFile) {
+                    formData.append("newFile", newFile);
+                }
+                formData.append("deleteImg", isDeleteChecked);
+                
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                try {
+                    const response = await fetch(`/post/modify/${postId}`, {
+                        method: "POST",
+                        headers: { [header]: token },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        alert("게시물이 수정되었습니다.")
+                        closeModifyPostModal(postId);
+                    } else {
+                        const errorText = await response.text();
+                        alert(errorText);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("오류가 발생했습니다.");
+                }
+            }
+
             // AJAX 게시물 삭제.
             async function deletePost(postId) {
                 if (!confirm("게시물을 삭제하시겠습니까?")) {
@@ -247,11 +371,141 @@
 
                     if (response.ok) {
                         alert("게시물이 삭제되었습니다.");
-                        const postContainer = document.getElementById('postbox-' + postId);
-                        if (postContainer) {
-                            const contentBox = postContainer.querySelector('.post-box');
-                            contentBox.innerHTML = '<div style="white-space: pre-wrap; color: #999;">삭제된 게시물입니다.</div>';
+                    } else {
+                        const errorMsg = await response.text();
+                        alert(errorMsg);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("오류가 발생했습니다.");
+                }
+            }
+
+            // AJAX 댓글 등록.
+            async function submitAnswer(form, event, postId) {
+                event.preventDefault();
+
+                const textarea = form.querySelector("textarea");
+                const content = textarea.value;
+                
+
+                if (content.trim() === "") {
+                    alert("내용을 입력해 주세요.");
+                    return false;
+                }
+
+                const formData = new FormData();
+                formData.append("content", content);
+
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                try {
+                    const response = await fetch(`/answer/create/${postId}`, {
+                        method: "POST",
+                        headers: { 
+                            [header]: token 
+                        },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const postBox = form.closest('.post-right');
+                        const answerContainer = postBox.querySelector('.answer-box');
+                        textarea.value = ""; 
+                        answerContainer.scrollTop = answerContainer.scrollHeight; 
+                    } else {
+                        console.log("Error status:", response.status);
+                        alert("로그인이 되어있는지 확인해 주세요.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("시스템 오류가 발생했습니다.");
+                }
+                return false;
+            }
+
+            // AJAX 댓글 수정.
+            function modifyAnswer(answerId) {
+                const answerContentBox = document.getElementById('answer-' + answerId);
+                const contentDiv = answerContentBox.children[1];
+                const oldContent = contentDiv.innerText;
+
+                if (oldContent === "삭제된 댓글입니다.") {
+                alert("삭제된 댓글입니다.");
+                return;
+                }
+
+                document.getElementById('modify-answer-content-' + answerId).value = oldContent;
+                document.getElementById('modifyAnswer-' + answerId).style.display = 'flex';
+            }
+
+            function closeModifyAnswerModal(answerId) {
+                document.getElementById('modifyAnswer-' + answerId).style.display = 'none';
+            }
+
+            async function submitModifyAnswer(answerId) {
+                const contentInput = document.getElementById('modify-answer-content-' + answerId);
+                const newContent = contentInput.value;
+
+                if (newContent.trim() === "") {
+                    alert("내용을 입력해 주세요.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("newContent", newContent);
+                
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                try {
+                    const response = await fetch(`/answer/modify/${answerId}`, {
+                        method: "POST",
+                        headers: { [header]: token },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        alert("댓글이 수정되었습니다.");
+                        closeModifyAnswerModal(answerId);
+                    } else {
+                        const errorText = await response.text();
+                        alert(errorText);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("오류가 발생했습니다.");
+                }
+            }
+
+
+            // AJAX 댓글 삭제.
+            async function deleteAnswer(answerId) {
+                if (!confirm("댓글을 삭제하시겠습니까?")) {
+                    return;
+                }
+
+                const csrfTokenNode = document.querySelector('meta[name="_csrf"]');
+                const csrfHeaderNode = document.querySelector('meta[name="_csrf_header"]');
+                const token = csrfTokenNode ? csrfTokenNode.getAttribute("content") : "";
+                const header = csrfHeaderNode ? csrfHeaderNode.getAttribute("content") : "";
+
+                try {
+                    const response = await fetch(`/answer/delete/${answerId}`, {
+                        method: "POST",
+                        headers: {
+                            [header]: token
                         }
+                    });
+
+                    if (response.ok) {
+                        alert("댓글이 삭제되었습니다.");
                     } else {
                         const errorMsg = await response.text();
                         alert(errorMsg);
@@ -270,12 +524,20 @@
 
                 stompClient.subscribe('/sub/posts', function (message) {
                     var newPost = JSON.parse(message.body);
-                    addPost(newPost); 
+                    if (document.getElementById('post-answer-box-' + newPost.id)) {
+                        updatePost(newPost);
+                    } else {
+                        addPost(newPost); 
+                    }
                 });
                 stompClient.subscribe('/sub/answers', function (message) {
                     var newAnswer = JSON.parse(message.body);
-                    addAnswer(newAnswer);
-                });
+                    if (document.getElementById('answer-' + newAnswer.id)) {
+                        updateAnswer(newAnswer);
+                    } else {
+                        addAnswer(newAnswer);
+                    }
+                }); 
                 stompClient.subscribe('/sub/user-update', function (message) {
                     var data = JSON.parse(message.body);
                     if (data.type === "WITHDRAWAL") {
@@ -285,6 +547,40 @@
                     }
                 });
             });
+
+            function updatePost(post) {
+                const container = document.getElementById('post-answer-box-' + post.id);
+                if (!container) return;
+
+                const contentBox = container.querySelector('.post-box');
+                const isDeleted = post.content === "삭제된 게시물입니다.";
+                let htmlContent = '';
+                
+                if (isDeleted) {
+                    htmlContent = `<div style="white-space: pre-wrap; color: #999;">${post.content}</div>`;
+                } else {
+                    htmlContent = `<div style="white-space: pre-wrap;">${post.content}</div>`;
+                    if (post.imgUrl) {
+                        htmlContent += `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">`;
+                    }
+                }
+                contentBox.innerHTML = htmlContent;
+            }
+
+            function updateAnswer(answer) {
+                const answerContentBox = document.getElementById('answer-' + answer.id);
+                if (!answerContentBox) return;
+
+                const contentDiv = answerContentBox.children[1];
+                if (contentDiv) {
+                    contentDiv.innerText = answer.content;
+                    
+                    if (answer.content === "삭제된 댓글입니다.") {
+                        contentDiv.style.color = "#999";
+                    }
+                }
+                closeModifyAnswerModal(answer.id);
+            }
 
             async function handleForceLogout(targetUserId) {
                 const navUsername = document.getElementById('nav-username');
@@ -316,14 +612,13 @@
             }
 
             function addPost(post) {
-                if (document.getElementById('postbox-' + post.id)) {
-                    return;
-                }
+                if (document.getElementById('post-answer-box-' + post.id)) return;
+
                 const navUsername = document.getElementById('nav-username');
                 const myId = navUsername ? navUsername.getAttribute('data-user-id') : null;
                 const isMyPost = post.author && (post.author.id == myId);
                 var newPostHtml = `
-                    <div class="post-answer-box" id="postbox-${post.id}">
+                    <div class="post-answer-box" id="post-answer-box-${post.id}">
                         <div class="post-left">
                             <div class="post-header" style="margin-bottom: 10px;">
                                 <div class="username-display"
@@ -339,6 +634,11 @@
                             </div>
                             ${isMyPost ? 
                             `<div style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                                <button type="button"
+                                        onclick="modifyPost(${post.id})"
+                                        style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
+                                        수정</button>
+                                <div class="post-vertical-line"></div>
                                 <button type="button" 
                                         onclick="deletePost(${post.id})"
                                         style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">
@@ -356,21 +656,52 @@
                                 </div>
                             </form>
                         </div>
-                    </div>
-                `;
+                        <div id="modifyPost-${post.id}" class="modal-overlay">
+                            <div class="modal-box">
+                                <div class="modal-header">게시물 수정</div>
+                                <textarea id="modify-content-input-${post.id}" class="modify-content-input" placeholder="수정할 내용을 입력하세요." 
+                                          style="width: 100%; height: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; resize: none; font-family: inherit; font-size: 15px; outline: none;"></textarea>
+
+                                <div id="modify-image-container-${post.id}" style="position: relative; display: none; margin-top: 10px;">
+                                    <img id="modify-image-preview-${post.id}" src="" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 30px;">
+                                    <button type="button" 
+                                            onclick="removeImageInModal(${post.id})"
+                                            style="position: absolute; top: 5px; right: 5px; width: 25px; height: 25px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                        X
+                                    </button>
+                                </div>
+                                <input type="checkbox" id="delete-img-check-${post.id}" style="display: none;">
+
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                                    <span id="modify-filename-${post.id}" style="font-size: 13px; color: #1877f2;"></span>
+                                    <input type="file" id="modify-file-${post.id}" style="display: none;" onchange="updateModifyFile(${post.id})">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-gray" onclick="document.getElementById('modify-file-${post.id}').click()">추가</button>
+                                    <div style="gap: 10px;">
+                                        <button type="button" class="btn-gray" onclick="closeModifyPostModal(${post.id})">취소</button>
+                                        <button type="button" class="btn-blue" onclick="submitModifyPost(${post.id})">수정 완료</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
 
                 var writeBox = document.querySelector('.write-box');
                 writeBox.insertAdjacentHTML('afterend', newPostHtml);
             }
 
             function addAnswer(answer) {
-                var postBox = document.getElementById('postbox-' + answer.postId);
-                
-                if (postBox) {
-                    if (document.getElementById('answer-' + answer.id)) {
-                    return; 
-                }
-                    var answerContainer = postBox.querySelector('.answer-box'); 
+                var postAnswerBox = document.getElementById('post-answer-box-' + answer.postId);
+                if (postAnswerBox) {
+                    if (document.getElementById('answer-' + answer.id)) return;
+
+                    var answerBox = postAnswerBox.querySelector('.answer-box'); 
+
+                    const navUsername = document.getElementById('nav-username');
+                    const myId = navUsername ? navUsername.getAttribute('data-user-id') : null;
+                    const isMyAnswer = answer.author && (answer.author.id == myId);
+
                     var newAnswerHtml = `
                         <div class="answer-content-box" id="answer-${answer.id}">
                             <div class="post-header">
@@ -382,10 +713,33 @@
                                 <div>${answer.createDate}</div>
                             </div>
                             <div style="white-space: pre-wrap;">${answer.content}</div>
+                            ${isMyAnswer ? `
+                            <div style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
+                                <button type="button" onclick="modifyAnswer(${answer.id})"
+                                        style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">수정</button>
+                                <div class="answer-vertical-line"></div>
+                                <button type="button" onclick="deleteAnswer(${answer.id})"
+                                        style="background: none; border: none; color: #65676b; font-size: 13px; cursor: pointer; padding: 0;">삭제</button>
+                            </div>
+                            ` : ''}
+
+                            <div id="modifyAnswer-${answer.id}" class="modal-overlay">
+                                <div class="modal-box">
+                                    <div class="modal-header">댓글 수정</div>
+                                    <textarea id="modify-answer-content-${answer.id}" class="modify-content-input" placeholder="수정할 댓글 내용을 입력하세요."></textarea>
+                                    <div class="modal-footer">
+                                        <div></div>
+                                        <div style="gap: 10px;">
+                                            <button type="button" class="btn-gray" onclick="closeModifyAnswerModal(${answer.id})">취소</button>
+                                            <button type="button" class="btn-blue" onclick="submitModifyAnswer(${answer.id})">수정 완료</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     `;
-                    answerContainer.insertAdjacentHTML('beforeend', newAnswerHtml);
-                    answerContainer.scrollTop = answerContainer.scrollHeight;
+                    answerBox.insertAdjacentHTML('beforeend', newAnswerHtml);
+                    answerBox.scrollTop = answerBox.scrollHeight;
                 }
             }
 

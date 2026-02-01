@@ -31,4 +31,6 @@ public class Answer {
 
     @ManyToOne
     private UserData author;
+
+    private LocalDateTime deletedAt;
 }

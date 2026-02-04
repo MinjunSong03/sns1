@@ -2,6 +2,8 @@ package com.example.sns1.post;
 
 import lombok.Getter;
 import lombok.Builder;
+
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +18,8 @@ public class PostResponseDto {
     private List<AnswerDto> answerList;
     private UserDataDto author;
     private String imgUrl;
+    private LocalDateTime modifiedAt;
+    private LocalDateTime deletedAt;
 
     @Getter
     @Builder
@@ -32,6 +36,8 @@ public class PostResponseDto {
         private String createDate;
         private UserDataDto author;
         private Long postId;
+        private LocalDateTime modifiedAt;
+        private LocalDateTime deletedAt;
     }
 
     public static PostResponseDto from(Post post) {
@@ -55,6 +61,8 @@ public class PostResponseDto {
                                     .build() 
                                 : null)
                         .postId(post.getId())
+                        .modifiedAt(answer.getModifiedAt())
+                        .deletedAt(answer.getDeletedAt())
                         .build())
                     .collect(Collectors.toList()) 
                     : new ArrayList<>())
@@ -65,6 +73,8 @@ public class PostResponseDto {
                             .build() 
                         : null)
                 .imgUrl(post.getDeletedAt() != null ? null : post.getImgUrl())
+                .modifiedAt(post.getModifiedAt())
+                .deletedAt(post.getDeletedAt())
                 .build();
     }
 }

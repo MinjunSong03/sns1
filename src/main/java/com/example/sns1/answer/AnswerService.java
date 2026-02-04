@@ -64,8 +64,9 @@ public class AnswerService {
         answerHistory.setContent(answer.getContent());
         answerHistory.setModifiedAt(LocalDateTime.now());
         answerHistory.setModifier(answer.getAuthor());
-
         this.answerHistoryRepository.save(answerHistory);
+
+        answer.setModifiedAt(LocalDateTime.now());
         answer.setContent(newContent);
     }
 }

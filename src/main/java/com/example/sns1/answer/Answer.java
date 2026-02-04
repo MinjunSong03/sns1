@@ -32,5 +32,7 @@ public class Answer {
     @ManyToOne
     private UserData author;
 
+    private LocalDateTime modifiedAt;
+
     private LocalDateTime deletedAt;
 }

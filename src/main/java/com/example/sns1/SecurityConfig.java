@@ -56,6 +56,11 @@ public class SecurityConfig {
                             .anyRequest().authenticated())
             .csrf((csrf) -> csrf
                             .ignoringRequestMatchers("/ws-stomp-web/**"))
+            .sessionManagement((session) -> session
+                .invalidSessionUrl("/user/login")
+                .maximumSessions(1)
+                .expiredUrl("/user/login")
+            )
             .formLogin((formLogin) -> formLogin     
                             .loginPage("/user/login")
                             .loginProcessingUrl("/user/login")

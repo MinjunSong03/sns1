@@ -22,7 +22,10 @@
                         th:text="${post.author != null ? post.author.username : '탈퇴한 사용자'}"
                         th:style="${post.author != null ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                     </div>
-                    <div th:text="${#temporals.format(post.createDate, 'yyyy-MM-dd HH:mm')}">
+                    <div>
+                        <span th:text="${#temporals.format(post.createDate, 'yyyy-MM-dd HH:mm')}"></span>
+                        <span th:if="${post.deletedAt != null}" style="color: #999; font-size: 13px;"> (삭제됨)</span>
+                        <span th:if="${post.deletedAt == null and post.modifiedAt != null}" style="color: #999; font-size: 13px;"> (수정됨)</span>
                     </div>
                 </div> 
                 <div class="post-box">
@@ -30,7 +33,7 @@
                         th:style="${post.deletedAt != null ? 'white-space: pre-wrap; color: #999;' : 'white-space: pre-wrap;'}">
                     </div>
                     <div th:if="${post.imgUrl != null and post.deletedAt == null}">
-                        <img th:src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">
+                        <img th:src="${post.imgUrl}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 30px; margin-top: 20px;">
                     </div>
                 </div>
                 <div th:if="${post.author != null and #authentication.principal.id == post.author.id}"
@@ -56,9 +59,15 @@
                                 th:text="${answer.author != null ? answer.author.username : '탈퇴한 사용자'}"
                                 th:style="${answer.author != null ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                             </div>
-                            <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
+                            <div>
+                                <span th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></span>
+                                <span th:if="${answer.deletedAt != null}" style="color: #999; font-size: 13px;"> (삭제됨)</span>
+                                <span th:if="${answer.deletedAt == null and answer.modifiedAt != null}" style="color: #999; font-size: 13px;"> (수정됨)</span>
+                            </div>
                         </div>
-                        <div th:text="${answer.content}" style="white-space: pre-wrap;"></div>
+                        <div th:text="${answer.deletedAt != null ? '삭제된 댓글입니다.' : answer.content}" 
+                            th:style="${answer.deletedAt != null ? 'color: #999; white-space: pre-wrap;' : 'white-space: pre-wrap;'}">
+                        </div>
                         <div th:if="${answer.author != null and #authentication.principal.id == answer.author.id}"
                             style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
                             <button type="button"
@@ -77,7 +86,7 @@
                                 
                                 <textarea th:id="'modify-answer-content-' + ${answer.id}" 
                                         class="modify-content-input" 
-                                        placeholder="수정할 내용을 입력해 주세요."></textarea>
+                                        placeholder="내용을 입력해 주세요."></textarea>
 
                                 <div class="modal-footer">
                                     <div></div> <div style="gap: 10px;">
@@ -102,10 +111,10 @@
                 <div class="modal-box">
                     <div class="modal-header">게시물 수정</div>
                     
-                    <textarea th:id="'modify-content-input-' + ${post.id}" class="modify-content-input" placeholder="수정할 내용을 입력해 주세요."></textarea>
+                    <textarea th:id="'modify-content-input-' + ${post.id}" class="modify-content-input" placeholder="내용을 입력해 주세요."></textarea>
 
                     <div th:id="'modify-image-container-' + ${post.id}" style="position: relative; display: none; margin-top: 10px;">
-                        <img th:id="'modify-image-preview-' + ${post.id}" src="" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 30px;">
+                        <img th:id="'modify-image-preview-' + ${post.id}" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 30px;">
                         <button type="button" 
                                 th:onclick="'removeImageInModal(' + ${post.id} + ')'"
                                 class="x-button">X
@@ -253,7 +262,7 @@
                         previewImg.src = e.target.result;
                         previewContainer.style.display = 'block';
                     };
-                    reader.readAsDataURL(file);
+                    reader.readAsDataURL(fileInput.files[0]);
                     deleteCheck.checked = false;
                 } else {
                     fileNameDisplay.textContent = "";
@@ -561,10 +570,23 @@
                 } else {
                     htmlContent = `<div style="white-space: pre-wrap;">${post.content}</div>`;
                     if (post.imgUrl) {
-                        htmlContent += `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">`;
+                        htmlContent += `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 30px; margin-top: 20px;">`;
                     }
                 }
                 contentBox.innerHTML = htmlContent;
+
+                const dateDiv = container.querySelector('.post-header > div:last-child');
+                if (dateDiv) {
+                    let statusHtml = '';
+                    if (post.deletedAt) {
+                        statusHtml = '<span style="color: #999; font-size: 13px;"> (삭제됨)</span>';
+                    } else if (post.modifiedAt) {
+                        statusHtml = '<span style="color: #999; font-size: 13px;"> (수정됨)</span>';
+                    }
+                    const dateText = post.createDate.replace('T', ' ').substring(0, 16); 
+                    dateDiv.innerHTML = `<span>${dateText}</span>${statusHtml}`;
+                }
+                closeModifyPostModal(post.id);
             }
 
             function updateAnswer(answer) {
@@ -578,6 +600,17 @@
                     if (answer.content === "삭제된 댓글입니다.") {
                         contentDiv.style.color = "#999";
                     }
+                }
+                const dateDiv = answerContentBox.querySelector('.post-header > div:last-child');
+                if (dateDiv) {
+                    let statusHtml = '';
+                    if (answer.deletedAt) {
+                        statusHtml = '<span style="color: #999; font-size: 13px;"> (삭제됨)</span>';
+                    } else if (answer.modifiedAt) {
+                        statusHtml = '<span style="color: #999; font-size: 13px;"> (수정됨)</span>';
+                    }
+                    const dateText = answer.createDate.replace('T', ' ').substring(0, 16);
+                    dateDiv.innerHTML = `<span>${dateText}</span>${statusHtml}`;
                 }
                 closeModifyAnswerModal(answer.id);
             }
@@ -626,11 +659,14 @@
                                     style="${post.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                                     ${post.author ? post.author.username : '탈퇴한 사용자'}
                                 </div>
-                                <div>${post.createDate}</div>
+                                <div>
+                                    <div>${post.createDate.replace('T', ' ').substring(0, 16)}</div>
+                                    ${post.deletedAt ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (post.modifiedAt ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
+                                </div>
                             </div>
                             <div class="post-box">
                                 <div style="${post.content === '삭제된 게시물입니다.' ? 'white-space: pre-wrap; color: #999;' : 'white-space: pre-wrap;' }">${post.content}</div>
-                                ${post.imgUrl && !(post.content === '삭제된 게시물입니다.') ? `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 20px; margin-top: 20px;">` : ''}
+                                ${post.imgUrl && !(post.content === '삭제된 게시물입니다.') ? `<img src="${post.imgUrl}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 30px; margin-top: 20px;">` : ''}
                             </div>
                             ${isMyPost ? 
                             `<div style="margin-top: auto; display: flex; justify-content: flex-end; padding-top: 10px;">
@@ -659,14 +695,14 @@
                         <div id="modifyPost-${post.id}" class="modal-overlay">
                             <div class="modal-box">
                                 <div class="modal-header">게시물 수정</div>
-                                <textarea id="modify-content-input-${post.id}" class="modify-content-input" placeholder="수정할 내용을 입력하세요." 
+                                <textarea id="modify-content-input-${post.id}" class="modify-content-input" placeholder="내용을 입력해 주세요." 
                                           style="width: 100%; height: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; resize: none; font-family: inherit; font-size: 15px; outline: none;"></textarea>
 
                                 <div id="modify-image-container-${post.id}" style="position: relative; display: none; margin-top: 10px;">
-                                    <img id="modify-image-preview-${post.id}" src="" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 30px;">
+                                    <img id="modify-image-preview-${post.id}" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 30px;">
                                     <button type="button" 
                                             onclick="removeImageInModal(${post.id})"
-                                            style="position: absolute; top: 5px; right: 5px; width: 25px; height: 25px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                            style="position: absolute; top: 5px; right: 5px; width: 25px; height: 25px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
                                         X
                                     </button>
                                 </div>
@@ -710,7 +746,10 @@
                                     style="${answer.author ? 'font-weight: bold; color: #050505;' : 'font-weight: bold; color: #999;'}">
                                     ${answer.author ? answer.author.username : '탈퇴한 사용자'}
                                 </div>
-                                <div>${answer.createDate}</div>
+                                <div>
+                                    <div>${answer.createDate.replace('T', ' ').substring(0, 16)}</div>
+                                    ${answer.deletedAt ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (answer.modifiedAt ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
+                                </div>
                             </div>
                             <div style="white-space: pre-wrap;">${answer.content}</div>
                             ${isMyAnswer ? `
@@ -726,7 +765,7 @@
                             <div id="modifyAnswer-${answer.id}" class="modal-overlay">
                                 <div class="modal-box">
                                     <div class="modal-header">댓글 수정</div>
-                                    <textarea id="modify-answer-content-${answer.id}" class="modify-content-input" placeholder="수정할 댓글 내용을 입력하세요."></textarea>
+                                    <textarea id="modify-answer-content-${answer.id}" class="modify-content-input" placeholder="내용을 입력해 주세요."></textarea>
                                     <div class="modal-footer">
                                         <div></div>
                                         <div style="gap: 10px;">

@@ -39,5 +39,7 @@ public class Post {
 
     private String imgUrl;
 
+    private LocalDateTime modifiedAt;
+
     private LocalDateTime deletedAt;
 }

@@ -53,7 +53,7 @@
         }
         .nav-logo {
             box-sizing: border-box;
-            font-size: 24px;
+            font-size: 25px;
             font-weight: bold;
             color: #1877f2;
             text-decoration: none;
@@ -151,7 +151,7 @@
         .post-header { 
             box-sizing: border-box;
             margin-bottom: 10px; 
-            font-size: 13px; 
+            font-size: 15px; 
             color: #65676b; 
             display: flex;
             justify-content: space-between;
@@ -212,6 +212,67 @@
             line-height: 1.5;
             max-height: 100px;
             overflow-y: auto;
+        }
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); 
+            z-index: 2000; 
+            justify-content: center;
+            align-items: center;
+            border-radius: 30px;
+        }
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 30px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .modal-header {
+            font-weight: bold;
+            font-size: 20px;
+            padding-bottom: 10px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .modify-content-input {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            resize: none;
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+        }
+        .x-button {
+            position: absolute; 
+            top: 5px; 
+            right: 5px; 
+            width: 25px; 
+            height: 25px; 
+            background: rgba(0,0,0,0.6); 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold;
         }
         .btn-gray {
             box-sizing: border-box;
@@ -292,67 +353,15 @@
         .answer-input::-webkit-scrollbar-track {
             background-color: transparent;
         }
-
-        .modal-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); 
-            z-index: 2000; 
-            justify-content: center;
-            align-items: center;
-            border-radius: 30px;
+        .modify-content-input::-webkit-scrollbar {
+            width: 8px;
         }
-        .modal-box {
-            background: white;
-            padding: 20px;
-            border-radius: 30px;
-            width: 500px;
-            max-width: 90%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .modify-content-input::-webkit-scrollbar-thumb {
+            background-color: #1877f2;
+            border-radius: 4px;
         }
-        .modal-header {
-            font-weight: bold;
-            font-size: 20px;
-            padding-bottom: 10px;
-        }
-        .modal-footer {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .modify-content-input {
-            width: 100%;
-            height: 150px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            resize: none;
-            font-family: inherit;
-            font-size: 15px;
-            outline: none;
-        }
-        .x-button {
-            position: absolute; 
-            top: 5px; 
-            right: 5px; 
-            width: 25px; 
-            height: 25px; 
-            background: rgba(0,0,0,0.6); 
-            color: white; 
-            border: none; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: bold;
+        .modify-content-input::-webkit-scrollbar-track {
+            background-color: transparent;
         }
     </style>
 </head>

@@ -1,7 +1,10 @@
 package com.example.sns1.user;
 
 import com.example.sns1.DataNotFoundException;
+import com.example.sns1.answer.AnswerHistory;
+import com.example.sns1.answer.AnswerHistoryRepository;
 import com.example.sns1.answer.AnswerRepository;
+import com.example.sns1.post.PostHistoryRepository;
 import com.example.sns1.post.PostRepository;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +23,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final PostRepository postRepository;
     private final AnswerRepository answerRepository;
+    private final PostHistoryRepository postHistoryRepository;
+    private final AnswerHistoryRepository answerHistoryRepository;
 
     public UserData create(String username, String email, String password) {
         UserData user = new UserData();
@@ -67,6 +72,8 @@ public class UserService {
         if (!passwordEncoder.matches(password, author.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
+        postHistoryRepository.updateModifierToNull(userId);
+        answerHistoryRepository.updateModifierToNull(userId);
         postRepository.updateAuthorToNull(userId);
         answerRepository.updateAuthorToNull(userId);
         this.userRepository.delete(author);

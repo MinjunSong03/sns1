@@ -83,9 +83,9 @@ public class PostService {
         postHistory.setImgUrl(post.getImgUrl());
         postHistory.setModifiedAt(LocalDateTime.now());
         postHistory.setModifier(post.getAuthor());
-
         this.postHistoryRepository.save(postHistory);
 
+        post.setModifiedAt(LocalDateTime.now());
         post.setContent(newContent);
         
         if (newFile != null && !newFile.isEmpty()) {

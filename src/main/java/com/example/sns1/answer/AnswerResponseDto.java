@@ -2,6 +2,8 @@ package com.example.sns1.answer;
 
 import lombok.Getter;
 import lombok.Builder;
+
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Getter
@@ -12,6 +14,8 @@ public class AnswerResponseDto {
     private String createDate;
     private Long postId;
     private UserDataDto author;
+    private LocalDateTime modifiedAt;
+    private LocalDateTime deletedAt;
 
     @Getter
     @Builder
@@ -35,6 +39,8 @@ public class AnswerResponseDto {
                             .username(answer.getAuthor().getUsername())
                             .build() 
                         : null)
+                .modifiedAt(answer.getModifiedAt())
+                .deletedAt(answer.getDeletedAt())
                 .build();
     }
 }

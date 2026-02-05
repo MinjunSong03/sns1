@@ -661,7 +661,7 @@
                                 </div>
                                 <div>
                                     <div>${post.createDate.replace('T', ' ').substring(0, 16)}</div>
-                                    ${post.deletedAt ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (post.modifiedAt ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
+                                    ${post.deletedAt != null ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (post.modifiedAt != null ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
                                 </div>
                             </div>
                             <div class="post-box">
@@ -751,7 +751,7 @@
                                 </div>
                                 <div>
                                     <div>${answer.createDate.replace('T', ' ').substring(0, 16)}</div>
-                                    ${answer.deletedAt ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (answer.modifiedAt ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
+                                    ${answer.deletedAt != null ? '<span style="color: #999; font-size: 12px;"> (삭제됨)</span>' : (answer.modifiedAt != null ? '<span style="color: #999; font-size: 13px;"> (수정됨)</span>' : '')}
                                 </div>
                             </div>
                             <div style="white-space: pre-wrap;">${answer.content}</div>

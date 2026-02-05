@@ -51,7 +51,7 @@ public class PostResponseDto {
                 .answerList(post.getAnswerList() != null ? 
                     post.getAnswerList().stream().map(answer -> AnswerDto.builder()
                         .id(answer.getId())
-                        .content(answer.getContent())
+                        .content(answer.getDeletedAt() != null ? "삭제된 댓글입니다." : answer.getContent())
                         .createDate(answer.getCreateDate() != null ? 
                             answer.getCreateDate().format(formatter) : "")
                         .author(answer.getAuthor() != null ? 
